@@ -80,6 +80,6 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "bot: update brain and site [$(date -u +%Y-%m-%d)]"
-            git push origin HEAD
-            echo "Pushed brain + site updates"
+            git push origin HEAD:main
+            echo "Pushed brain + site updates to main"
           fi
