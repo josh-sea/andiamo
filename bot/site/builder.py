@@ -10,6 +10,14 @@ from datetime import datetime
 from bot.config import BRAIN_DIR, DOCS_DIR, THESES_DIR, CONNECTIONS_DIR, VALIDATIONS_DIR
 import bot.brain as brain_mod
 
+# GitHub Pages serves from /andiamo/ — all absolute site links must include this prefix
+SITE_BASE = "/andiamo"
+
+
+def _url(path: str) -> str:
+    """Prefix a site-root-relative path with the GitHub Pages base."""
+    return f"{SITE_BASE}{path}"
+
 
 def _ensure_docs():
     for d in [DOCS_DIR, os.path.join(DOCS_DIR, "theses"), os.path.join(DOCS_DIR, "connections"),
@@ -30,7 +38,7 @@ def _md_to_html(text: str) -> str:
     text = re.sub(r"\*(.+?)\*", r"<em>\1</em>", text)
     text = re.sub(r"`(.+?)`", r"<code>\1</code>", text)
     text = re.sub(r"^- (.+)$", r"<li>\1</li>", text, flags=re.MULTILINE)
-    text = re.sub(r"\[\[(.+?)\]\]", lambda m: f'<a href="/theses/{m.group(1)}.html">[[{m.group(1)}]]</a>', text)
+    text = re.sub(r"\[\[(.+?)\]\]", lambda m: f'<a href="{_url(f"/theses/{m.group(1)}.html")}">[[{m.group(1)}]]</a>', text)
     text = re.sub(r"\[(.+?)\]\((.+?)\)", r'<a href="\2">\1</a>', text)
     text = re.sub(r"^---$", r"<hr>", text, flags=re.MULTILINE)
     paragraphs = []
@@ -51,11 +59,11 @@ def _strip_frontmatter(text: str) -> str:
 
 def _page(title: str, body: str, breadcrumb: str = "", active_nav: str = "") -> str:
     nav_items = [
-        ("Home", "/index.html", "home"),
-        ("Theses", "/theses/index.html", "theses"),
-        ("Connections", "/connections/index.html", "connections"),
-        ("Validations", "/validations/index.html", "validations"),
-        ("Portfolio", "/portfolio.html", "portfolio"),
+        ("Home", _url("/index.html"), "home"),
+        ("Theses", _url("/theses/index.html"), "theses"),
+        ("Connections", _url("/connections/index.html"), "connections"),
+        ("Validations", _url("/validations/index.html"), "validations"),
+        ("Portfolio", _url("/portfolio.html"), "portfolio"),
     ]
     nav_html = ""
     for label, href, key in nav_items:
@@ -71,7 +79,7 @@ def _page(title: str, body: str, breadcrumb: str = "", active_nav: str = "") -> 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{title} — ANDIAMO</title>
-<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="{_url('/assets/style.css')}">
 </head>
 <body>
 <div id="container">
@@ -122,8 +130,10 @@ def build_index(theses: list[dict]):
     def thesis_row(t):
         badge = _verdict_badge(t.get("verdict") or t["status"])
         tags = " ".join(f'<span class="tag">{tag}</span>' for tag in t.get("tags", []))
+        slug = t["slug"]
+        href = _url(f"/theses/{slug}.html")
         return (
-            f'<tr><td><a href="/theses/{t["slug"]}.html">{t["title"]}</a></td>'
+            f'<tr><td><a href="{href}">{t["title"]}</a></td>'
             f'<td>{badge}</td><td>{tags}</td><td>{t["created"]}</td></tr>'
         )
 
@@ -186,7 +196,7 @@ def build_thesis_page(thesis: dict, content: str):
 """
     path = os.path.join(DOCS_DIR, "theses", f"{s['slug']}.html")
     with open(path, "w") as f:
-        f.write(_page(s["title"], body, breadcrumb='<a href="/index.html">Home</a> &rsaquo; <a href="/theses/index.html">Theses</a>', active_nav="theses"))
+        f.write(_page(s["title"], body, breadcrumb=f'<a href="{_url("/index.html")}">Home</a> &rsaquo; <a href="{_url("/theses/index.html")}">Theses</a>', active_nav="theses"))
 
 
 def build_theses_index(theses: list[dict]):
@@ -194,8 +204,10 @@ def build_theses_index(theses: list[dict]):
     for t in theses:
         badge = _verdict_badge(t.get("verdict") or t["status"])
         tags = " ".join(f'<span class="tag">{tag}</span>' for tag in t.get("tags", []))
+        slug = t["slug"]
+        href = _url(f"/theses/{slug}.html")
         rows += (
-            f'<tr><td><a href="/theses/{t["slug"]}.html">{t["title"]}</a></td>'
+            f'<tr><td><a href="{href}">{t["title"]}</a></td>'
             f'<td>{badge}</td><td>{tags}</td><td>{t["created"]}</td></tr>\n'
         )
     body = f"""
@@ -205,7 +217,7 @@ def build_theses_index(theses: list[dict]):
 </table>"""
     path = os.path.join(DOCS_DIR, "theses", "index.html")
     with open(path, "w") as f:
-        f.write(_page("All Theses", body, breadcrumb='<a href="/index.html">Home</a>', active_nav="theses"))
+        f.write(_page("All Theses", body, breadcrumb=f'<a href="{_url("/index.html")}">Home</a>', active_nav="theses"))
 
 
 def build_connections_index():
@@ -213,7 +225,7 @@ def build_connections_index():
     for fname in sorted(os.listdir(CONNECTIONS_DIR)):
         if fname.endswith(".md"):
             items.append(fname[:-3])
-    rows = "\n".join(f'<li><a href="/connections/{s}.html">{s.replace("-", " ").title()}</a></li>' for s in items)
+    rows = "\n".join(f'<li><a href="{_url(f"/connections/{s}.html")}">{s.replace("-", " ").title()}</a></li>' for s in items)
     body = f"<ul class='link-list'>{rows}</ul>" if rows else "<p>No connections yet.</p>"
     path = os.path.join(DOCS_DIR, "connections", "index.html")
     with open(path, "w") as f:
@@ -225,7 +237,7 @@ def build_validations_index():
     for fname in sorted(os.listdir(VALIDATIONS_DIR)):
         if fname.endswith(".md"):
             items.append(fname[:-3])
-    rows = "\n".join(f'<li><a href="/validations/{s}.html">{s.replace("-", " ").title()}</a></li>' for s in items)
+    rows = "\n".join(f'<li><a href="{_url(f"/validations/{s}.html")}">{s.replace("-", " ").title()}</a></li>' for s in items)
     body = f"<ul class='link-list'>{rows}</ul>" if rows else "<p>No validations run yet.</p>"
     path = os.path.join(DOCS_DIR, "validations", "index.html")
     with open(path, "w") as f:
