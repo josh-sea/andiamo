@@ -324,8 +324,15 @@ def run_and_save(
             status="open",
         )
         result["brain_slug"] = slug
-        # Save raw data snapshot
         brain.save_asset(slug, f"Hypothesis: {hypothesis}\n\nTimestamp: {result['timestamp']}")
+
+    elif mode == "scan":
+        # Save scan digest as an asset so there's always something to commit
+        from datetime import date as _date
+        scan_slug = f"scan-{_date.today().isoformat()}"
+        brain.save_asset(scan_slug, f"# Scan: {hypothesis[:80]}\n\n{result['full_text']}")
+        brain._rebuild_index()
+        result["brain_slug"] = scan_slug
 
     elif mode == "validate" and s.get("title"):
         import re as _re

@@ -74,10 +74,12 @@ jobs:
         run: |
           git config user.name "andiamo-bot"
           git config user.email "andiamo-bot@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
           git add brain/ docs/
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
             git commit -m "bot: update brain and site [$(date -u +%Y-%m-%d)]"
             git push origin HEAD
+            echo "Pushed brain + site updates"
           fi
