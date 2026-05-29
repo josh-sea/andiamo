@@ -15,6 +15,10 @@ def _ensure_docs():
     for d in [DOCS_DIR, os.path.join(DOCS_DIR, "theses"), os.path.join(DOCS_DIR, "connections"),
               os.path.join(DOCS_DIR, "validations"), os.path.join(DOCS_DIR, "assets")]:
         os.makedirs(d, exist_ok=True)
+    # Prevent GitHub Pages from running Jekyll on our pre-built HTML
+    nojekyll = os.path.join(DOCS_DIR, ".nojekyll")
+    if not os.path.exists(nojekyll):
+        open(nojekyll, "w").close()
 
 
 def _md_to_html(text: str) -> str:
