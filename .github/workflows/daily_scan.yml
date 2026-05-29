@@ -1,0 +1,83 @@
+name: Daily Finance Scan
+
+on:
+  schedule:
+    - cron: "0 13 * * 1-5"   # 9am ET weekdays
+  workflow_dispatch:
+    inputs:
+      hypothesis:
+        description: "Hypothesis or topic to investigate"
+        required: false
+        default: ""
+      mode:
+        description: "Mode: full | scan | validate | lookback"
+        required: false
+        default: "scan"
+      lookback_date:
+        description: "Lookback date (YYYY-MM-DD), only for lookback mode"
+        required: false
+        default: ""
+      paper_trade:
+        description: "Place paper trades if confidence >= 65"
+        required: false
+        default: "false"
+
+jobs:
+  investigate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run investigation
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_BASE_URL: "https://paper-api.alpaca.markets"
+        run: |
+          MODE="${{ github.event.inputs.mode || 'scan' }}"
+          HYPO="${{ github.event.inputs.hypothesis }}"
+          DATE="${{ github.event.inputs.lookback_date }}"
+          TRADE="${{ github.event.inputs.paper_trade }}"
+
+          if [ -z "$HYPO" ]; then
+            python -m bot.main daily-scan
+          elif [ "$MODE" = "lookback" ] && [ -n "$DATE" ]; then
+            python -m bot.main lookback "$HYPO" --date "$DATE"
+          elif [ "$MODE" = "validate" ]; then
+            python -m bot.main validate "$HYPO"
+          elif [ "$MODE" = "full" ]; then
+            if [ "$TRADE" = "true" ]; then
+              python -m bot.main investigate "$HYPO" --trade
+            else
+              python -m bot.main investigate "$HYPO"
+            fi
+          else
+            python -m bot.main scan "$HYPO"
+          fi
+
+      - name: Commit brain + site updates
+        run: |
+          git config user.name "andiamo-bot"
+          git config user.email "andiamo-bot@users.noreply.github.com"
+          git add brain/ docs/
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "bot: update brain and site [$(date -u +%Y-%m-%d)]"
+            git push origin HEAD
+          fi
