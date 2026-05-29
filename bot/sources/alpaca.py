@@ -90,7 +90,7 @@ def place_order(symbol: str, qty: float, side: str, order_type: str = "market") 
     return {"id": str(order.id), "symbol": order.symbol, "qty": float(order.qty), "side": order.side.value}
 
 
-def summarize_bars(df: pd.DataFrame, symbol: str) -> str:
+def summarize_bars(df, symbol: str) -> str:
     if df.empty:
         return f"No price data available for {symbol}."
     close = df["close"]

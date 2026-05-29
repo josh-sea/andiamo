@@ -122,10 +122,31 @@ def _verdict_badge(verdict: str) -> str:
     return f'<span class="badge {cls}">{verdict.upper()}</span>'
 
 
+def _list_scans() -> list[dict]:
+    from bot.config import ASSETS_DIR
+    scans = []
+    if not os.path.exists(ASSETS_DIR):
+        return scans
+    for fname in sorted(os.listdir(ASSETS_DIR), reverse=True):
+        if fname.startswith("scan-") and fname.endswith(".md"):
+            date = fname[5:-3]
+            path = os.path.join(ASSETS_DIR, fname)
+            try:
+                with open(path) as f:
+                    lines = f.readlines()
+                title_line = next((l.strip() for l in lines if l.startswith("# Scan:")), fname)
+                title = title_line.replace("# Scan:", "").strip()[:80]
+            except Exception:
+                title = fname
+            scans.append({"date": date, "slug": fname[:-3], "title": title, "path": path})
+    return scans[:10]
+
+
 def build_index(theses: list[dict]):
     open_t = [t for t in theses if t["status"] == "open"]
     validated = [t for t in theses if t["status"] == "validated"]
     invalidated = [t for t in theses if t["status"] == "invalidated"]
+    scans = _list_scans()
 
     def thesis_row(t):
         badge = _verdict_badge(t.get("verdict") or t["status"])
@@ -150,6 +171,18 @@ def build_index(theses: list[dict]):
   </table>
 </section>"""
 
+    scan_rows = ""
+    for s in scans:
+        scan_rows += f'<tr><td>{s["date"]}</td><td>{s["title"]}</td></tr>\n'
+    scan_section = f"""
+<section>
+  <h2>&#9671; Recent Scans</h2>
+  <table class="thesis-table">
+    <thead><tr><th>Date</th><th>Topic</th></tr></thead>
+    <tbody>{scan_rows}</tbody>
+  </table>
+</section>""" if scan_rows else ""
+
     body = f"""
 <div class="marquee-wrap"><marquee>&#9830; LIVE RESEARCH &#9830; AUTONOMOUS ANALYSIS &#9830; PATTERN RECOGNITION &#9830; KNOWLEDGE GRAPH UPDATED DAILY &#9830;</marquee></div>
 
@@ -158,11 +191,13 @@ def build_index(theses: list[dict]):
   <span class="stat">&#9989; {len(validated)} VALIDATED</span>
   <span class="stat">&#10060; {len(invalidated)} INVALIDATED</span>
   <span class="stat">&#128269; {len(open_t)} OPEN</span>
+  <span class="stat">&#128313; {len(scans)} SCANS</span>
 </div>
 
 {section("Active Investigations", open_t)}
 {section("Validated", validated)}
 {section("Invalidated", invalidated)}
+{scan_section}
 
 <section>
   <h2>&#9671; About</h2>
@@ -245,20 +280,24 @@ def build_validations_index():
 
 
 def build_portfolio_page():
-    try:
-        from bot.sources import alpaca
-        acct = alpaca.get_account()
-        positions = alpaca.get_positions()
-        pos_rows = ""
-        for p in positions:
-            pl_cls = "positive" if p["unrealized_pl"] >= 0 else "negative"
-            pos_rows += (
-                f'<tr><td>{p["symbol"]}</td><td>{p["qty"]:.2f}</td>'
-                f'<td>${p["avg_entry_price"]:.2f}</td>'
-                f'<td>${p["market_value"]:.2f}</td>'
-                f'<td class="{pl_cls}">${p["unrealized_pl"]:.2f} ({float(p["unrealized_plpc"])*100:.1f}%)</td></tr>\n'
-            )
-        body = f"""
+    from bot.config import ALPACA_API_KEY
+    if not ALPACA_API_KEY:
+        body = '<div class="about-box"><p>Alpaca credentials not configured. Add <code>ALPACA_API_KEY</code> and <code>ALPACA_SECRET_KEY</code> as GitHub Actions secrets to enable portfolio tracking.</p></div>'
+    else:
+        try:
+            from bot.sources import alpaca
+            acct = alpaca.get_account()
+            positions = alpaca.get_positions()
+            pos_rows = ""
+            for p in positions:
+                pl_cls = "positive" if p["unrealized_pl"] >= 0 else "negative"
+                pos_rows += (
+                    f'<tr><td>{p["symbol"]}</td><td>{p["qty"]:.2f}</td>'
+                    f'<td>${p["avg_entry_price"]:.2f}</td>'
+                    f'<td>${p["market_value"]:.2f}</td>'
+                    f'<td class="{pl_cls}">${p["unrealized_pl"]:.2f} ({float(p["unrealized_plpc"])*100:.1f}%)</td></tr>\n'
+                )
+            body = f"""
 <div class="stats-bar">
   <span class="stat">EQUITY: ${acct['equity']:,.2f}</span>
   <span class="stat">CASH: ${acct['cash']:,.2f}</span>
@@ -270,8 +309,8 @@ def build_portfolio_page():
   <tbody>{pos_rows if pos_rows else '<tr><td colspan="5">No open positions</td></tr>'}</tbody>
 </table>
 <p class="disclaimer">&#9888; Paper trading account only. Not real money.</p>"""
-    except Exception as e:
-        body = f'<div class="error-box">Could not load portfolio: {e}</div>'
+        except Exception as e:
+            body = f'<div class="error-box">Could not load portfolio: {e}</div>'
 
     path = os.path.join(DOCS_DIR, "portfolio.html")
     with open(path, "w") as f:
