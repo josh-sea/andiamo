@@ -247,6 +247,10 @@ At the end, output a JSON block wrapped in ```json ... ``` with:
     structured = {}
 
     for turn in range(max_turns):
+        # Hard guard: API rejects calls where the last message is from the assistant
+        if messages and messages[-1].get("role") == "assistant":
+            messages.append({"role": "user", "content": "Continue."})
+
         response = client.messages.create(
             model=CLAUDE_MODEL,
             max_tokens=8192,
@@ -288,12 +292,8 @@ At the end, output a JSON block wrapped in ```json ... ``` with:
                 })
             messages.append({"role": "user", "content": tool_results})
         else:
-            # max_tokens or unexpected stop with no tool calls — conversation
-            # ends on an assistant message; send a continue nudge to stay valid
-            if response.stop_reason == "max_tokens":
-                messages.append({"role": "user", "content": "Continue your analysis."})
-            else:
-                break
+            # No tool calls and not end_turn (e.g. max_tokens mid-synthesis) — break cleanly
+            break
 
     # Extract structured JSON if present
     import re
