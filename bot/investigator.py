@@ -175,7 +175,7 @@ def investigate(
     hypothesis: str,
     mode: str = "full",  # full | lookback | validate | scan
     lookback_date: Optional[str] = None,
-    max_turns: int = 20,
+    max_turns: int = 50,
     verbose: bool = True,
 ) -> dict:
     """
@@ -249,7 +249,7 @@ At the end, output a JSON block wrapped in ```json ... ``` with:
     for turn in range(max_turns):
         response = client.messages.create(
             model=CLAUDE_MODEL,
-            max_tokens=4096,
+            max_tokens=8192,
             system=SYSTEM_PROMPT,
             tools=TOOLS,
             messages=messages,
