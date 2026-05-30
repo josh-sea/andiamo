@@ -287,6 +287,13 @@ At the end, output a JSON block wrapped in ```json ... ``` with:
                     "content": str(result)[:6000],
                 })
             messages.append({"role": "user", "content": tool_results})
+        else:
+            # max_tokens or unexpected stop with no tool calls — conversation
+            # ends on an assistant message; send a continue nudge to stay valid
+            if response.stop_reason == "max_tokens":
+                messages.append({"role": "user", "content": "Continue your analysis."})
+            else:
+                break
 
     # Extract structured JSON if present
     import re
