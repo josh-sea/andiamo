@@ -1,5 +1,5 @@
 # Andiamo Brain — Knowledge Index
-*Last updated: 2026-07-30*
+*Last updated: 2026-07-31*
 
 ## Theses
 
