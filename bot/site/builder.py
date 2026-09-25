@@ -6,6 +6,7 @@ Geocities-inspired HTML with page routing (no hash routing).
 import os
 import re
 import json
+import html
 from datetime import datetime
 from bot.config import BRAIN_DIR, DOCS_DIR, THESES_DIR, CONNECTIONS_DIR, VALIDATIONS_DIR
 import bot.brain as brain_mod
@@ -124,97 +125,142 @@ def _verdict_badge(verdict: str) -> str:
     return f'<span class="badge {cls}">{verdict.upper()}</span>'
 
 
+_SCAN_META_KEYS = {
+    "scan_date", "date", "scan_type", "report_type", "analyst", "scanner", "generated_by",
+    "generated", "generated_at", "scan_id", "id", "status",
+}
+_LEAD_TITLE_KEYS = ("title", "headline", "one_liner", "name")
+_LEAD_HEADER_KEYS = {"rank", "id", "signal_strength", "signal_strength_label", "category", "type", "signal_type"}
+
+
+def _find_scan_payload(data):
+    """Scans have no fixed schema; locate the dict that holds the leads list."""
+    if isinstance(data, dict):
+        if isinstance(data.get("leads"), list):
+            return data
+        for v in data.values():
+            found = _find_scan_payload(v)
+            if found is not None:
+                return found
+    return None
+
+
+def _label(key: str) -> str:
+    return key.replace("_", " ").strip().capitalize()
+
+
+def _render_value(value) -> str:
+    if isinstance(value, dict):
+        items = "".join(
+            f"<li><strong>{html.escape(_label(k))}:</strong> {_render_value(v)}</li>"
+            for k, v in value.items() if v not in (None, "", [], {})
+        )
+        return f"<ul>{items}</ul>"
+    if isinstance(value, list):
+        return "<ul>" + "".join(f"<li>{_render_value(v)}</li>" for v in value) + "</ul>"
+    return html.escape(str(value))
+
+
+def _render_fields(obj: dict, skip: set) -> str:
+    out = ""
+    for k, v in obj.items():
+        if k in skip or v in (None, "", [], {}):
+            continue
+        if isinstance(v, (list, dict)):
+            out += f"<div class='scan-field'><strong>{html.escape(_label(k))}:</strong>{_render_value(v)}</div>"
+        else:
+            out += f"<p><strong>{html.escape(_label(k))}:</strong> {_render_value(v)}</p>"
+    return out
+
+
+def _lead_title(lead: dict) -> str:
+    return next((str(lead[k]) for k in _LEAD_TITLE_KEYS if lead.get(k)), "Untitled lead")
+
+
 def _list_scans() -> list[dict]:
     from bot.config import ASSETS_DIR
     scans = []
     if not os.path.exists(ASSETS_DIR):
         return scans
     for fname in sorted(os.listdir(ASSETS_DIR), reverse=True):
-        if fname.startswith("scan-") and fname.endswith(".md"):
-            date = fname[5:-3]
-            path = os.path.join(ASSETS_DIR, fname)
+        if not (fname.startswith("scan-") and fname.endswith(".md")):
+            continue
+        path = os.path.join(ASSETS_DIR, fname)
+        with open(path) as f:
+            raw = f.read()
+        payload = {}
+        json_match = re.search(r"```json\s*(\{.*?\})\s*```", raw, re.DOTALL)
+        if json_match:
             try:
-                with open(path) as f:
-                    raw = f.read()
-                title_line = next((l.strip() for l in raw.splitlines() if l.startswith("# Scan:")), fname)
-                title = title_line.replace("# Scan:", "").strip()[:80]
-                # Try to extract lead titles from embedded JSON
-                leads = []
-                json_match = re.search(r"```json\s*(\{.*?\})\s*```", raw, re.DOTALL)
-                if json_match:
-                    try:
-                        data = json.loads(json_match.group(1))
-                        leads = data.get("leads", [])
-                        if not title or title == fname:
-                            title = data.get("headline_context", "")[:80]
-                    except Exception:
-                        pass
-            except Exception:
-                title = fname
-                leads = []
-            scans.append({"date": date, "slug": fname[:-3], "title": title, "path": path, "leads": leads})
+                payload = _find_scan_payload(json.loads(json_match.group(1))) or {}
+            except json.JSONDecodeError:
+                pass
+        leads = [l for l in payload.get("leads", []) if isinstance(l, dict)]
+        headline = next(
+            (payload[k] for k in ("headline_context", "summary", "scan_summary", "macro_context",
+                                  "market_context", "macro_backdrop_summary")
+             if isinstance(payload.get(k), str) and payload.get(k)),
+            "",
+        )
+        if not headline and leads:
+            headline = _lead_title(leads[0])
+        scans.append({
+            "date": fname[5:-3],
+            "slug": fname[:-3],
+            "title": headline,
+            "path": path,
+            "raw": raw,
+            "payload": payload,
+            "leads": leads,
+        })
     return scans
+
+
+def _signal_class(strength) -> str:
+    try:
+        n = float(strength)
+    except (TypeError, ValueError):
+        return ""
+    return "positive" if n >= 75 else ("badge-mixed" if n >= 55 else "")
 
 
 def build_scan_page(scan: dict):
     date = scan["date"]
-    slug = scan["slug"]
-    leads = scan.get("leads", [])
-    title = scan.get("title") or f"Scan {date}"
+    leads = scan["leads"]
+    payload = scan["payload"]
 
     if leads:
         lead_html = ""
-        for lead in leads:
-            rank = lead.get("rank", "")
-            ltitle = lead.get("title", "")
-            strength = lead.get("signal_strength", 0)
-            category = lead.get("category", "")
-            what = lead.get("what_is_happening", "")
-            why = lead.get("why_it_matters", "")
-            tension = lead.get("key_tension", "")
-            base_rate = lead.get("base_rate_note", "")
-            invest = lead.get("leads_to_investigate", [])
-            sources = lead.get("sources", [])
-
-            strength_cls = "positive" if strength >= 75 else ("badge-mixed" if strength >= 55 else "")
-            invest_items = "".join(f"<li><code>{i}</code></li>" for i in invest)
-            source_items = "".join(f"<li>{s}</li>" for s in sources)
-
+        for i, lead in enumerate(leads, 1):
+            strength = lead.get("signal_strength", "")
+            label = lead.get("signal_strength_label", "")
+            category = lead.get("category") or lead.get("signal_type") or lead.get("type") or ""
+            primary = next((k for k in _LEAD_TITLE_KEYS if lead.get(k)), None)
+            skip = _LEAD_HEADER_KEYS | ({primary} if primary else set())
+            signal = f'<span class="scan-signal {_signal_class(strength)}">&#9889; {html.escape(str(strength))}{" " + html.escape(str(label)) if label else ""}</span>' if strength != "" else ""
+            cat = f'<span class="tag">{html.escape(str(category))}</span>' if category else ""
             lead_html += f"""
 <div class="scan-lead">
   <div class="scan-lead-header">
-    <span class="scan-rank">#{rank}</span>
-    <span class="scan-lead-title">{ltitle}</span>
-    <span class="scan-signal {strength_cls}">&#9889; {strength}</span>
-    <span class="tag">{category}</span>
+    <span class="scan-rank">#{html.escape(str(lead.get("rank", i)))}</span>
+    <span class="scan-lead-title">{html.escape(_lead_title(lead))}</span>
+    {signal}
+    {cat}
   </div>
-  <div class="scan-lead-body">
-    {"<p><strong>What:</strong> " + what + "</p>" if what else ""}
-    {"<p><strong>Why it matters:</strong> " + why + "</p>" if why else ""}
-    {"<p><strong>Key tension:</strong> " + tension + "</p>" if tension else ""}
-    {"<p><strong>Base rate:</strong> " + base_rate + "</p>" if base_rate else ""}
-    {"<div class='scan-invest'><strong>Leads to investigate:</strong><ul>" + invest_items + "</ul></div>" if invest_items else ""}
-    {"<div class='scan-sources'><strong>Sources:</strong><ul>" + source_items + "</ul></div>" if source_items else ""}
-  </div>
+  <div class="scan-lead-body">{_render_fields(lead, skip)}</div>
 </div>"""
-
+        context = _render_fields(payload, _SCAN_META_KEYS | {"leads"})
         body = f"""
 <div class="thesis-meta">
   <span class="meta-date">&#128197; {date}</span>
   <span class="stat">{len(leads)} LEADS</span>
 </div>
-<div class="scan-headline-context">{scan.get("title", "")}</div>
+{f'<div class="scan-headline-context">{context}</div>' if context else ""}
 {lead_html}"""
     else:
-        # Fall back to rendering raw markdown
-        try:
-            with open(scan["path"]) as f:
-                raw = f.read()
-            body = f'<div class="thesis-body">{_md_to_html(_strip_frontmatter(raw))}</div>'
-        except Exception:
-            body = "<p>Could not load scan content.</p>"
+        body = f'<div class="thesis-body">{_md_to_html(_strip_frontmatter(scan["raw"]))}</div>'
 
-    path = os.path.join(DOCS_DIR, "scans", f"{slug}.html")
+    path = os.path.join(DOCS_DIR, "scans", f"{scan['slug']}.html")
     with open(path, "w") as f:
         f.write(_page(f"Scan: {date}", body,
                       breadcrumb=f'<a href="{_url("/index.html")}">Home</a> &rsaquo; <a href="{_url("/scans/index.html")}">Scans</a>',
@@ -226,7 +272,7 @@ def build_scans_index(scans: list[dict]):
     for s in scans:
         href = _url(f"/scans/{s['slug']}.html")
         n_leads = len(s.get("leads", []))
-        lead_titles = ", ".join(l.get("title", "")[:50] for l in s.get("leads", [])[:2])
+        lead_titles = html.escape(", ".join(_lead_title(l)[:50] for l in s.get("leads", [])[:2]))
         rows += (
             f'<tr><td><a href="{href}">{s["date"]}</a></td>'
             f'<td>{n_leads}</td>'
@@ -276,7 +322,7 @@ def build_index(theses: list[dict]):
     for s in recent_scans:
         href = _url(f"/scans/{s['slug']}.html")
         n_leads = len(s.get("leads", []))
-        scan_rows += f'<tr><td><a href="{href}">{s["date"]}</a></td><td>{n_leads} leads</td><td>{s["title"][:70]}</td></tr>\n'
+        scan_rows += f'<tr><td><a href="{href}">{s["date"]}</a></td><td>{n_leads} leads</td><td>{html.escape(s["title"][:90])}</td></tr>\n'
     more_link = f' <a href="{_url("/scans/index.html")}" style="font-size:11px;color:var(--link);">→ view all {len(all_scans)}</a>' if len(all_scans) > 10 else ""
     scan_section = f"""
 <section>
@@ -806,6 +852,12 @@ footer small { color: #223355; }
 .scan-invest li, .scan-sources li { margin: 2px 0; }
 
 .scan-preview { color: #556688; font-size: 12px; }
+
+.scan-field { margin-bottom: 10px; }
+.scan-field ul, .scan-lead-body ul ul, .scan-headline-context ul { margin: 4px 0 0 0; padding-left: 18px; }
+.scan-field li { margin: 2px 0; }
+.scan-headline-context p { margin-bottom: 8px; }
+.scan-headline-context strong { color: var(--accent); }
 
 /* RESPONSIVE */
 @media (max-width: 600px) {

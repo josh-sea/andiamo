@@ -209,7 +209,26 @@ Update the verdict with a clear VALIDATED / INVALIDATED / MIXED + explanation.""
         user_content = f"""SURFACE SCAN
 
 Scan for interesting financial signals and emerging narratives around: {hypothesis}
-Check Reddit, news, web. Identify 3–5 most interesting leads worth investigating further. Rate each by signal strength. Do not deep-dive — just surface."""
+Check Reddit, news, web. Identify 3–5 most interesting leads worth investigating further. Rate each by signal strength. Do not deep-dive — just surface.
+
+At the end, output a JSON block wrapped in ```json ... ``` using exactly this schema:
+{{
+  "summary": "2-3 sentence overview of today's market backdrop",
+  "leads": [
+    {{
+      "rank": 1,
+      "title": "...",
+      "signal_strength": 0-100,
+      "category": "...",
+      "what_is_happening": "...",
+      "why_it_matters": "...",
+      "bear_case": "...",
+      "tickers": [...],
+      "leads_to_investigate": [...],
+      "sources": [...]
+    }}
+  ]
+}}"""
     else:
         user_content = f"""FULL INVESTIGATION
 
