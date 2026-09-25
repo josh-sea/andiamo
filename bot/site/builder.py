@@ -21,7 +21,8 @@ def _url(path: str) -> str:
 
 def _ensure_docs():
     for d in [DOCS_DIR, os.path.join(DOCS_DIR, "theses"), os.path.join(DOCS_DIR, "connections"),
-              os.path.join(DOCS_DIR, "validations"), os.path.join(DOCS_DIR, "assets")]:
+              os.path.join(DOCS_DIR, "validations"), os.path.join(DOCS_DIR, "assets"),
+              os.path.join(DOCS_DIR, "scans")]:
         os.makedirs(d, exist_ok=True)
     # Prevent GitHub Pages from running Jekyll on our pre-built HTML
     nojekyll = os.path.join(DOCS_DIR, ".nojekyll")
@@ -60,6 +61,7 @@ def _strip_frontmatter(text: str) -> str:
 def _page(title: str, body: str, breadcrumb: str = "", active_nav: str = "") -> str:
     nav_items = [
         ("Home", _url("/index.html"), "home"),
+        ("Scans", _url("/scans/index.html"), "scans"),
         ("Theses", _url("/theses/index.html"), "theses"),
         ("Connections", _url("/connections/index.html"), "connections"),
         ("Validations", _url("/validations/index.html"), "validations"),
@@ -133,20 +135,119 @@ def _list_scans() -> list[dict]:
             path = os.path.join(ASSETS_DIR, fname)
             try:
                 with open(path) as f:
-                    lines = f.readlines()
-                title_line = next((l.strip() for l in lines if l.startswith("# Scan:")), fname)
+                    raw = f.read()
+                title_line = next((l.strip() for l in raw.splitlines() if l.startswith("# Scan:")), fname)
                 title = title_line.replace("# Scan:", "").strip()[:80]
+                # Try to extract lead titles from embedded JSON
+                leads = []
+                json_match = re.search(r"```json\s*(\{.*?\})\s*```", raw, re.DOTALL)
+                if json_match:
+                    try:
+                        data = json.loads(json_match.group(1))
+                        leads = data.get("leads", [])
+                        if not title or title == fname:
+                            title = data.get("headline_context", "")[:80]
+                    except Exception:
+                        pass
             except Exception:
                 title = fname
-            scans.append({"date": date, "slug": fname[:-3], "title": title, "path": path})
-    return scans[:10]
+                leads = []
+            scans.append({"date": date, "slug": fname[:-3], "title": title, "path": path, "leads": leads})
+    return scans
+
+
+def build_scan_page(scan: dict):
+    date = scan["date"]
+    slug = scan["slug"]
+    leads = scan.get("leads", [])
+    title = scan.get("title") or f"Scan {date}"
+
+    if leads:
+        lead_html = ""
+        for lead in leads:
+            rank = lead.get("rank", "")
+            ltitle = lead.get("title", "")
+            strength = lead.get("signal_strength", 0)
+            category = lead.get("category", "")
+            what = lead.get("what_is_happening", "")
+            why = lead.get("why_it_matters", "")
+            tension = lead.get("key_tension", "")
+            base_rate = lead.get("base_rate_note", "")
+            invest = lead.get("leads_to_investigate", [])
+            sources = lead.get("sources", [])
+
+            strength_cls = "positive" if strength >= 75 else ("badge-mixed" if strength >= 55 else "")
+            invest_items = "".join(f"<li><code>{i}</code></li>" for i in invest)
+            source_items = "".join(f"<li>{s}</li>" for s in sources)
+
+            lead_html += f"""
+<div class="scan-lead">
+  <div class="scan-lead-header">
+    <span class="scan-rank">#{rank}</span>
+    <span class="scan-lead-title">{ltitle}</span>
+    <span class="scan-signal {strength_cls}">&#9889; {strength}</span>
+    <span class="tag">{category}</span>
+  </div>
+  <div class="scan-lead-body">
+    {"<p><strong>What:</strong> " + what + "</p>" if what else ""}
+    {"<p><strong>Why it matters:</strong> " + why + "</p>" if why else ""}
+    {"<p><strong>Key tension:</strong> " + tension + "</p>" if tension else ""}
+    {"<p><strong>Base rate:</strong> " + base_rate + "</p>" if base_rate else ""}
+    {"<div class='scan-invest'><strong>Leads to investigate:</strong><ul>" + invest_items + "</ul></div>" if invest_items else ""}
+    {"<div class='scan-sources'><strong>Sources:</strong><ul>" + source_items + "</ul></div>" if source_items else ""}
+  </div>
+</div>"""
+
+        body = f"""
+<div class="thesis-meta">
+  <span class="meta-date">&#128197; {date}</span>
+  <span class="stat">{len(leads)} LEADS</span>
+</div>
+<div class="scan-headline-context">{scan.get("title", "")}</div>
+{lead_html}"""
+    else:
+        # Fall back to rendering raw markdown
+        try:
+            with open(scan["path"]) as f:
+                raw = f.read()
+            body = f'<div class="thesis-body">{_md_to_html(_strip_frontmatter(raw))}</div>'
+        except Exception:
+            body = "<p>Could not load scan content.</p>"
+
+    path = os.path.join(DOCS_DIR, "scans", f"{slug}.html")
+    with open(path, "w") as f:
+        f.write(_page(f"Scan: {date}", body,
+                      breadcrumb=f'<a href="{_url("/index.html")}">Home</a> &rsaquo; <a href="{_url("/scans/index.html")}">Scans</a>',
+                      active_nav="scans"))
+
+
+def build_scans_index(scans: list[dict]):
+    rows = ""
+    for s in scans:
+        href = _url(f"/scans/{s['slug']}.html")
+        n_leads = len(s.get("leads", []))
+        lead_titles = ", ".join(l.get("title", "")[:50] for l in s.get("leads", [])[:2])
+        rows += (
+            f'<tr><td><a href="{href}">{s["date"]}</a></td>'
+            f'<td>{n_leads}</td>'
+            f'<td class="scan-preview">{lead_titles}</td></tr>\n'
+        )
+    body = f"""
+<table class="thesis-table">
+  <thead><tr><th>Date</th><th>Leads</th><th>Top Signals</th></tr></thead>
+  <tbody>{rows}</tbody>
+</table>"""
+    path = os.path.join(DOCS_DIR, "scans", "index.html")
+    with open(path, "w") as f:
+        f.write(_page("All Scans", body, breadcrumb=f'<a href="{_url("/index.html")}">Home</a>', active_nav="scans"))
 
 
 def build_index(theses: list[dict]):
     open_t = [t for t in theses if t["status"] == "open"]
     validated = [t for t in theses if t["status"] == "validated"]
     invalidated = [t for t in theses if t["status"] == "invalidated"]
-    scans = _list_scans()
+    all_scans = _list_scans()
+    recent_scans = all_scans[:10]
 
     def thesis_row(t):
         badge = _verdict_badge(t.get("verdict") or t["status"])
@@ -172,13 +273,16 @@ def build_index(theses: list[dict]):
 </section>"""
 
     scan_rows = ""
-    for s in scans:
-        scan_rows += f'<tr><td>{s["date"]}</td><td>{s["title"]}</td></tr>\n'
+    for s in recent_scans:
+        href = _url(f"/scans/{s['slug']}.html")
+        n_leads = len(s.get("leads", []))
+        scan_rows += f'<tr><td><a href="{href}">{s["date"]}</a></td><td>{n_leads} leads</td><td>{s["title"][:70]}</td></tr>\n'
+    more_link = f' <a href="{_url("/scans/index.html")}" style="font-size:11px;color:var(--link);">→ view all {len(all_scans)}</a>' if len(all_scans) > 10 else ""
     scan_section = f"""
 <section>
-  <h2>&#9671; Recent Scans</h2>
+  <h2>&#9671; Recent Scans{more_link}</h2>
   <table class="thesis-table">
-    <thead><tr><th>Date</th><th>Topic</th></tr></thead>
+    <thead><tr><th>Date</th><th>Leads</th><th>Headline</th></tr></thead>
     <tbody>{scan_rows}</tbody>
   </table>
 </section>""" if scan_rows else ""
@@ -191,7 +295,7 @@ def build_index(theses: list[dict]):
   <span class="stat">&#9989; {len(validated)} VALIDATED</span>
   <span class="stat">&#10060; {len(invalidated)} INVALIDATED</span>
   <span class="stat">&#128269; {len(open_t)} OPEN</span>
-  <span class="stat">&#128313; {len(scans)} SCANS</span>
+  <span class="stat">&#128313; {len(all_scans)} SCANS</span>
 </div>
 
 {section("Active Investigations", open_t)}
@@ -630,6 +734,79 @@ footer {
 }
 footer small { color: #223355; }
 
+/* SCAN PAGES */
+.scan-headline-context {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent2);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.scan-lead {
+  background: rgba(0,0,44,0.5);
+  border: 1px solid #001144;
+  border-left: 3px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.scan-lead-header {
+  background: var(--bg2);
+  border-bottom: 1px solid #001144;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.scan-rank {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #556688;
+  min-width: 24px;
+}
+
+.scan-lead-title {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-bright);
+  flex: 1;
+}
+
+.scan-signal {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 8px;
+  background: rgba(0,85,255,0.15);
+  border: 1px solid var(--border);
+  color: var(--border2);
+}
+.scan-signal.positive { background: rgba(0,255,136,0.1); border-color: var(--bull); color: var(--bull); }
+.scan-signal.badge-mixed { background: rgba(255,102,0,0.1); border-color: var(--accent2); color: var(--accent2); }
+
+.scan-lead-body {
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.scan-lead-body p { margin-bottom: 10px; }
+.scan-lead-body strong { color: var(--border2); }
+
+.scan-invest, .scan-sources {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8899bb;
+}
+.scan-invest ul, .scan-sources ul { margin-top: 4px; padding-left: 16px; }
+.scan-invest li, .scan-sources li { margin: 2px 0; }
+
+.scan-preview { color: #556688; font-size: 12px; }
+
 /* RESPONSIVE */
 @media (max-width: 600px) {
   #banner { font-size: 14px; letter-spacing: 1px; }
@@ -677,6 +854,12 @@ def build():
             title = fname[:-3].replace("-", " ").title()
             with open(dst, "w") as f:
                 f.write(_page(title, body, active_nav="validations"))
+
+    # Scan pages
+    all_scans = _list_scans()
+    for scan in all_scans:
+        build_scan_page(scan)
+    build_scans_index(all_scans)
 
     build_theses_index(theses)
     build_connections_index()
