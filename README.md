@@ -38,6 +38,9 @@ python -m bot.main validate "copper supply thesis"
 # Run daily digest (top Reddit posts → scan pipeline)
 python -m bot.main daily-scan
 
+# Autonomous trading session (reads scans + its own journal, trades, publishes)
+python -m bot.main trade
+
 # Rebuild the GitHub Pages site manually
 python -m bot.main build-site
 
@@ -48,6 +51,9 @@ python -m bot.main show-brain
 ## Automation
 
 - **Daily scan**: GitHub Actions runs at 9am ET weekdays (`daily_scan.yml`). Results committed back to `brain/` and `docs/`.
+- **Daily trading session**: runs at 11am ET weekdays (`daily_trade.yml`), after the scan. The trader reads
+  the latest scans, its strategy and journal, trades the Alpaca paper account with full discretion, rewrites its
+  strategy, and leaves research directives that the next morning's scan prioritizes.
 - **Manual trigger**: Use the `workflow_dispatch` input in GitHub Actions to run a specific hypothesis/mode.
 - **GitHub Pages**: Auto-deploys whenever `docs/` changes on `main`.
 
@@ -59,19 +65,29 @@ brain/
   theses/               # Individual thesis markdown files
   connections/          # Cross-thesis connection notes
   validations/          # Lookback validation results
-  assets/               # Raw data snapshots
+  assets/               # Raw data snapshots + daily scans
+  trader/
+    strategy.md         # The trader's current self-authored strategy
+    strategy_history.md # Why and when it changed its strategy
+    directives.json     # Research requests for the next daily scan
+    journal/            # One entry per trading session
+    trades.jsonl        # Every order it placed, with rationale and fill
+    equity.json         # Daily equity + positions snapshots
 
 docs/                   # GitHub Pages static site (auto-generated)
   index.html
   theses/
   connections/
   validations/
+  scans/
+  journal/
   portfolio.html
   assets/style.css
 
 bot/
   main.py               # CLI entry point
   investigator.py       # Core Claude agent loop
+  trader.py             # Autonomous portfolio manager
   brain.py              # Knowledge graph manager
   config.py             # Config / env vars
   sources/

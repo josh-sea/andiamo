@@ -171,6 +171,48 @@ def _dispatch_tool(name: str, inputs: dict) -> str:
     return "[unknown tool]"
 
 
+def run_agent_loop(client, system: str, tools: list, dispatch, messages: list,
+                   max_turns: int = 50, verbose: bool = True) -> str:
+    """Tool-calling loop; returns all assistant text concatenated."""
+    full_text = ""
+    for turn in range(max_turns):
+        # API rejects calls where the last message is from the assistant
+        if messages and messages[-1].get("role") == "assistant":
+            messages.append({"role": "user", "content": "Continue."})
+
+        response = client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=8192,
+            system=system,
+            tools=tools,
+            messages=messages,
+        )
+
+        tool_calls = [b for b in response.content if b.type == "tool_use"]
+        turn_text = "\n".join(b.text for b in response.content if b.type == "text")
+        full_text += turn_text + "\n"
+
+        if verbose and turn_text.strip():
+            print(f"\n[turn {turn+1}] {turn_text[:300]}{'...' if len(turn_text) > 300 else ''}")
+
+        messages.append({"role": "assistant", "content": response.content})
+
+        if response.stop_reason == "end_turn" or not tool_calls:
+            break
+
+        tool_results = []
+        for tc in tool_calls:
+            if verbose:
+                print(f"  -> {tc.name}({json.dumps(tc.input)[:120]})")
+            tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": tc.id,
+                "content": str(dispatch(tc.name, tc.input))[:6000],
+            })
+        messages.append({"role": "user", "content": tool_results})
+    return full_text
+
+
 def investigate(
     hypothesis: str,
     mode: str = "full",  # full | lookback | validate | scan
@@ -262,57 +304,8 @@ At the end, output a JSON block wrapped in ```json ... ``` with:
 
     messages.append({"role": "user", "content": user_content})
 
-    full_text = ""
+    full_text = run_agent_loop(client, SYSTEM_PROMPT, TOOLS, _dispatch_tool, messages, max_turns, verbose)
     structured = {}
-
-    for turn in range(max_turns):
-        # Hard guard: API rejects calls where the last message is from the assistant
-        if messages and messages[-1].get("role") == "assistant":
-            messages.append({"role": "user", "content": "Continue."})
-
-        response = client.messages.create(
-            model=CLAUDE_MODEL,
-            max_tokens=8192,
-            system=SYSTEM_PROMPT,
-            tools=TOOLS,
-            messages=messages,
-        )
-
-        tool_calls = []
-        text_parts = []
-
-        for block in response.content:
-            if block.type == "text":
-                text_parts.append(block.text)
-            elif block.type == "tool_use":
-                tool_calls.append(block)
-
-        turn_text = "\n".join(text_parts)
-        full_text += turn_text + "\n"
-
-        if verbose and turn_text.strip():
-            print(f"\n[turn {turn+1}] {turn_text[:300]}{'...' if len(turn_text) > 300 else ''}")
-
-        messages.append({"role": "assistant", "content": response.content})
-
-        if response.stop_reason == "end_turn":
-            break
-
-        if tool_calls:
-            tool_results = []
-            for tc in tool_calls:
-                if verbose:
-                    print(f"  -> {tc.name}({json.dumps(tc.input)[:120]})")
-                result = _dispatch_tool(tc.name, tc.input)
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": tc.id,
-                    "content": str(result)[:6000],
-                })
-            messages.append({"role": "user", "content": tool_results})
-        else:
-            # No tool calls and not end_turn (e.g. max_tokens mid-synthesis) — break cleanly
-            break
 
     # Extract structured JSON if present
     import re
@@ -380,7 +373,7 @@ def run_and_save(
         trade = s["suggested_trade"]
         if trade and s.get("confidence", 0) >= 65:
             try:
-                order = alpaca.place_order(trade["symbol"], trade["qty"], trade["side"])
+                order = alpaca.place_order(trade["symbol"], trade["side"], qty=trade["qty"])
                 result["order"] = order
                 if verbose:
                     print(f"\n[paper trade] {trade['side'].upper()} {trade['qty']} {trade['symbol']}: {order}")

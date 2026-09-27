@@ -9,6 +9,7 @@ Usage:
   python -m bot.main build-site
   python -m bot.main show-brain
   python -m bot.main daily-scan
+  python -m bot.main trade
 """
 
 import sys
@@ -78,9 +79,35 @@ def cmd_daily_scan(args):
     top_titles = [p["title"] for p in posts[:20] if not p.get("error")]
     digest = "\n".join(f"- {t}" for t in top_titles)
     hypothesis = f"Daily finance signal scan for {datetime.utcnow().date()}:\n{digest}"
+
+    from bot.trader import read_directives
+    directives = read_directives()
+    if directives:
+        lines = "\n".join(
+            f"- {d.get('topic', '')}: {d.get('why', '')}"
+            + (f" [{', '.join(d['tickers'])}]" if d.get("tickers") else "")
+            for d in directives
+        )
+        hypothesis += (
+            "\n\nResearch directives from the portfolio manager (prioritize these, "
+            "then surface anything else important):\n" + lines
+        )
     result = investigator.run_and_save(hypothesis, mode="scan", verbose=True)
     site_builder.build()
     print("[andiamo] Daily scan complete. Site rebuilt.")
+
+
+def cmd_trade(args):
+    from bot import trader
+    print(f"\n[andiamo] Trading session — {datetime.utcnow().date()}\n")
+    out = trader.run_session(verbose=True)
+    print("\n" + "=" * 60)
+    print(out["result"].get("headline", "(no headline)"))
+    for a in out["actions"]:
+        print(f"  {a['action']} {a['symbol']}: {(a.get('order') or {}).get('status') or a.get('error')}")
+    print(f"Equity: ${out['account']['equity']:,.2f}")
+    site_builder.build()
+    print("[andiamo] Site rebuilt.")
 
 
 def cmd_build_site(args):
@@ -120,6 +147,7 @@ def main():
     p_scan.add_argument("topic", nargs="+")
 
     sub.add_parser("daily-scan", help="Run the daily scan pipeline")
+    sub.add_parser("trade", help="Run an autonomous paper-trading session")
     sub.add_parser("build-site", help="Rebuild the GitHub Pages site")
     sub.add_parser("show-brain", help="Print the knowledge graph index")
 
@@ -131,6 +159,7 @@ def main():
         "lookback": cmd_lookback,
         "scan": cmd_scan,
         "daily-scan": cmd_daily_scan,
+        "trade": cmd_trade,
         "build-site": cmd_build_site,
         "show-brain": cmd_show_brain,
     }

@@ -23,7 +23,7 @@ def _url(path: str) -> str:
 def _ensure_docs():
     for d in [DOCS_DIR, os.path.join(DOCS_DIR, "theses"), os.path.join(DOCS_DIR, "connections"),
               os.path.join(DOCS_DIR, "validations"), os.path.join(DOCS_DIR, "assets"),
-              os.path.join(DOCS_DIR, "scans")]:
+              os.path.join(DOCS_DIR, "scans"), os.path.join(DOCS_DIR, "journal")]:
         os.makedirs(d, exist_ok=True)
     # Prevent GitHub Pages from running Jekyll on our pre-built HTML
     nojekyll = os.path.join(DOCS_DIR, ".nojekyll")
@@ -288,7 +288,26 @@ def build_scans_index(scans: list[dict]):
         f.write(_page("All Scans", body, breadcrumb=f'<a href="{_url("/index.html")}">Home</a>', active_nav="scans"))
 
 
-def build_index(theses: list[dict]):
+def _trader_summary(data: dict) -> str:
+    if not data["equity"]:
+        return ""
+    latest, first = data["equity"][-1], data["equity"][0]
+    ret = (latest["equity"] / first["equity"] - 1) * 100
+    last = data["journal"][0] if data["journal"] else None
+    last_html = (f'<p>Latest session: <a href="{_journal_url(last)}">{last["date"]} — '
+                 f'{html.escape(last["headline"])}</a></p>') if last else ""
+    return f"""
+<section>
+  <h2>&#9671; Autonomous Trader</h2>
+  <div class="about-box">
+    <p><strong>{_money(latest["equity"])}</strong> · {_pct_span(ret)} since {first["date"]} ·
+    {len(latest.get("positions", []))} positions · <a href="{_url("/portfolio.html")}">portfolio &amp; trade log →</a></p>
+    {last_html}
+  </div>
+</section>"""
+
+
+def build_index(theses: list[dict], trader_data: dict):
     open_t = [t for t in theses if t["status"] == "open"]
     validated = [t for t in theses if t["status"] == "validated"]
     invalidated = [t for t in theses if t["status"] == "invalidated"]
@@ -344,6 +363,7 @@ def build_index(theses: list[dict]):
   <span class="stat">&#128313; {len(all_scans)} SCANS</span>
 </div>
 
+{_trader_summary(trader_data)}
 {section("Active Investigations", open_t)}
 {section("Validated", validated)}
 {section("Invalidated", invalidated)}
@@ -429,42 +449,264 @@ def build_validations_index():
         f.write(_page("Validations", body, active_nav="validations"))
 
 
-def build_portfolio_page():
-    from bot.config import ALPACA_API_KEY
-    if not ALPACA_API_KEY:
-        body = '<div class="about-box"><p>Alpaca credentials not configured. Add <code>ALPACA_API_KEY</code> and <code>ALPACA_SECRET_KEY</code> as GitHub Actions secrets to enable portfolio tracking.</p></div>'
-    else:
-        try:
-            from bot.sources import alpaca
-            acct = alpaca.get_account()
-            positions = alpaca.get_positions()
-            pos_rows = ""
-            for p in positions:
-                pl_cls = "positive" if p["unrealized_pl"] >= 0 else "negative"
-                pos_rows += (
-                    f'<tr><td>{p["symbol"]}</td><td>{p["qty"]:.2f}</td>'
-                    f'<td>${p["avg_entry_price"]:.2f}</td>'
-                    f'<td>${p["market_value"]:.2f}</td>'
-                    f'<td class="{pl_cls}">${p["unrealized_pl"]:.2f} ({float(p["unrealized_plpc"])*100:.1f}%)</td></tr>\n'
-                )
-            body = f"""
-<div class="stats-bar">
-  <span class="stat">EQUITY: ${acct['equity']:,.2f}</span>
-  <span class="stat">CASH: ${acct['cash']:,.2f}</span>
-  <span class="stat">BUYING POWER: ${acct['buying_power']:,.2f}</span>
-</div>
-<h2>&#9671; Open Positions</h2>
-<table class="thesis-table">
-  <thead><tr><th>Symbol</th><th>Qty</th><th>Avg Entry</th><th>Mkt Value</th><th>Unrealized P&L</th></tr></thead>
-  <tbody>{pos_rows if pos_rows else '<tr><td colspan="5">No open positions</td></tr>'}</tbody>
-</table>
-<p class="disclaimer">&#9888; Paper trading account only. Not real money.</p>"""
-        except Exception as e:
-            body = f'<div class="error-box">Could not load portfolio: {e}</div>'
+def _trader_data() -> dict:
+    from bot import trader
+    ledger = []
+    if os.path.exists(trader.LEDGER_PATH):
+        with open(trader.LEDGER_PATH) as f:
+            ledger = [json.loads(line) for line in f if line.strip()]
+    journal = []
+    if os.path.exists(trader.JOURNAL_DIR):
+        for fname in sorted(os.listdir(trader.JOURNAL_DIR), reverse=True):
+            if fname.endswith(".md"):
+                with open(os.path.join(trader.JOURNAL_DIR, fname)) as f:
+                    raw = f.read()
+                headline = raw.splitlines()[0].lstrip("# ").strip() if raw else fname
+                journal.append({"date": fname[:-3], "headline": headline, "raw": raw})
+    return {
+        "equity": trader._load_json(trader.EQUITY_PATH, []),
+        "ledger": ledger,
+        "journal": journal,
+        "strategy": trader._read(trader.STRATEGY_PATH),
+        "strategy_history": trader._read(trader.STRATEGY_HISTORY_PATH),
+        "directives": trader._load_json(trader.DIRECTIVES_PATH, {}),
+    }
 
-    path = os.path.join(DOCS_DIR, "portfolio.html")
-    with open(path, "w") as f:
+
+def _journal_url(entry: dict) -> str:
+    return _url(f"/journal/{entry['date']}.html")
+
+
+def _safe_md(text: str) -> str:
+    return _md_to_html(html.escape(text, quote=False))
+
+
+def _money(x: float) -> str:
+    return f"${x:,.2f}"
+
+
+def _pct_span(x: float) -> str:
+    cls = "positive" if x >= 0 else "negative"
+    return f'<span class="{cls}">{x:+.2f}%</span>'
+
+
+def _equity_chart(points: list[dict]) -> str:
+    """Single-series equity line with a dashed inception baseline and hover crosshair."""
+    if not points:
+        return ""
+    w, h, pad_l, pad_r, pad_t, pad_b = 900, 260, 70, 16, 16, 28
+    vals = [p["equity"] for p in points]
+    base = vals[0]
+    lo, hi = min(vals + [base]), max(vals + [base])
+    span = (hi - lo) or max(hi * 0.01, 1)
+    lo, hi = lo - span * 0.1, hi + span * 0.1
+    n = len(points)
+
+    def x(i):
+        return pad_l + (w - pad_l - pad_r) * (i / (n - 1) if n > 1 else 0.5)
+
+    def y(v):
+        return pad_t + (h - pad_t - pad_b) * (1 - (v - lo) / (hi - lo))
+
+    path = " ".join(f"{'M' if i == 0 else 'L'}{x(i):.1f},{y(v):.1f}" for i, v in enumerate(vals))
+    rng = hi - lo
+    def tick_fmt(v):
+        if rng >= 30000:
+            return f"${v / 1000:,.0f}k"
+        if rng >= 3000:
+            return f"${v / 1000:,.1f}k"
+        return f"${v:,.0f}"
+
+    ticks = ""
+    for k in range(4):
+        v = lo + (hi - lo) * k / 3
+        ticks += (f'<line x1="{pad_l}" x2="{w - pad_r}" y1="{y(v):.1f}" y2="{y(v):.1f}" class="eq-grid"/>'
+                  f'<text x="{pad_l - 8}" y="{y(v) + 4:.1f}" class="eq-axis" text-anchor="end">{tick_fmt(v)}</text>')
+    xlabels = (f'<text x="{x(0):.1f}" y="{h - 8}" class="eq-axis" text-anchor="start">{points[0]["date"]}</text>'
+               + (f'<text x="{x(n - 1):.1f}" y="{h - 8}" class="eq-axis" text-anchor="end">{points[-1]["date"]}</text>' if n > 1 else ""))
+    data = json.dumps([{"d": p["date"], "v": p["equity"], "x": round(x(i), 1), "y": round(y(p["equity"]), 1)}
+                       for i, p in enumerate(points)])
+    last = f'<circle cx="{x(n - 1):.1f}" cy="{y(vals[-1]):.1f}" r="4" class="eq-dot"/>'
+    return f"""
+<div class="eq-chart" data-points='{html.escape(data)}' data-base="{base}">
+  <svg viewBox="0 0 {w} {h}" role="img" aria-label="Account equity over time">
+    {ticks}
+    <line x1="{pad_l}" x2="{w - pad_r}" y1="{y(base):.1f}" y2="{y(base):.1f}" class="eq-base"/>
+    <path d="{path}" class="eq-line"/>
+    {last}{xlabels}
+    <line class="eq-cross" y1="{pad_t}" y2="{h - pad_b}" x1="0" x2="0" visibility="hidden"/>
+    <circle class="eq-hover" r="5" visibility="hidden"/>
+    <rect x="{pad_l}" y="0" width="{w - pad_l - pad_r}" height="{h}" fill="transparent" class="eq-hit"/>
+  </svg>
+  <div class="eq-tip" hidden></div>
+</div>
+<script>
+(function() {{
+  const box = document.currentScript.previousElementSibling;
+  const pts = JSON.parse(box.dataset.points), base = +box.dataset.base;
+  const svg = box.querySelector('svg'), cross = box.querySelector('.eq-cross'),
+        dot = box.querySelector('.eq-hover'), tip = box.querySelector('.eq-tip');
+  box.querySelector('.eq-hit').addEventListener('mousemove', e => {{
+    const r = svg.getBoundingClientRect(), vx = (e.clientX - r.left) * svg.viewBox.baseVal.width / r.width;
+    let p = pts[0]; for (const q of pts) if (Math.abs(q.x - vx) < Math.abs(p.x - vx)) p = q;
+    cross.setAttribute('x1', p.x); cross.setAttribute('x2', p.x); cross.setAttribute('visibility', 'visible');
+    dot.setAttribute('cx', p.x); dot.setAttribute('cy', p.y); dot.setAttribute('visibility', 'visible');
+    const ret = (p.v / base - 1) * 100;
+    tip.innerHTML = p.d + '<br><b>$' + p.v.toLocaleString(undefined, {{minimumFractionDigits: 2, maximumFractionDigits: 2}}) +
+      '</b><br>' + (ret >= 0 ? '+' : '') + ret.toFixed(2) + '% since start';
+    tip.hidden = false;
+    const sx = p.x * r.width / svg.viewBox.baseVal.width;
+    tip.style.left = Math.min(sx + 12, r.width - 150) + 'px';
+    tip.style.top = (p.y * r.height / svg.viewBox.baseVal.height - 10) + 'px';
+  }});
+  box.querySelector('.eq-hit').addEventListener('mouseleave', () => {{
+    cross.setAttribute('visibility', 'hidden'); dot.setAttribute('visibility', 'hidden'); tip.hidden = true;
+  }});
+}})();
+</script>"""
+
+
+def _ledger_rows(ledger: list[dict]) -> str:
+    rows = ""
+    for t in reversed(ledger):
+        req, o = t.get("request", {}), t.get("order") or {}
+        side = (req.get("side") or "close").upper()
+        if req.get("qty"):
+            size = f"{req['qty']:g} sh"
+        elif req.get("notional"):
+            size = _money(req["notional"])
+        elif req.get("percentage"):
+            size = f"{req['percentage']:g}%"
+        else:
+            size = "all"
+        if t.get("error"):
+            status = f'<span class="negative">rejected</span>'
+        else:
+            status = html.escape(o.get("status", "?"))
+            if o.get("filled_avg_price"):
+                status += f" @ {_money(o['filled_avg_price'])}"
+        side_cls = "positive" if side == "BUY" else "negative"
+        rows += (f'<tr><td><a href="{_journal_url(t)}">{t["date"]}</a></td>'
+                 f'<td class="{side_cls}">{side}</td><td><strong>{html.escape(t.get("symbol", ""))}</strong></td>'
+                 f'<td>{size}</td><td>{status}</td><td class="trade-why">{html.escape(t.get("rationale", ""))}'
+                 + (f'<br><small class="negative">{html.escape(t["error"][:200])}</small>' if t.get("error") else "")
+                 + '</td></tr>\n')
+    return rows
+
+
+def build_portfolio_page(data: dict):
+    equity, ledger, journal = data["equity"], data["ledger"], data["journal"]
+    if not equity:
+        body = ('<div class="about-box"><p>The autonomous trader has not run yet. It runs every weekday after the '
+                'market opens (workflow <code>Daily Trading Session</code>), or trigger it manually from GitHub Actions.</p></div>')
+        with open(os.path.join(DOCS_DIR, "portfolio.html"), "w") as f:
+            f.write(_page("Portfolio", body, active_nav="portfolio"))
+        return
+
+    latest, first = equity[-1], equity[0]
+    total_ret = (latest["equity"] / first["equity"] - 1) * 100
+    day_ret = (latest["equity"] / equity[-2]["equity"] - 1) * 100 if len(equity) > 1 else 0.0
+    positions = latest.get("positions", [])
+
+    pos_rows = ""
+    for p in sorted(positions, key=lambda p: -abs(p["market_value"])):
+        weight = abs(p["market_value"]) / latest["equity"] * 100 if latest["equity"] else 0
+        pl_cls = "positive" if p["unrealized_pl"] >= 0 else "negative"
+        pos_rows += (f'<tr><td><strong>{html.escape(p["symbol"])}</strong></td><td>{p.get("side", "long")}</td>'
+                     f'<td>{p["qty"]:g}</td><td>{_money(p["avg_entry_price"])}</td>'
+                     f'<td>{_money(p.get("current_price", 0))}</td><td>{_money(p["market_value"])}</td><td>{weight:.1f}%</td>'
+                     f'<td class="{pl_cls}">{_money(p["unrealized_pl"])} ({p["unrealized_plpc"] * 100:+.1f}%)</td></tr>\n')
+
+    directives = data["directives"].get("directives", [])
+    dir_html = "".join(
+        f'<li><strong>{html.escape(d.get("topic", ""))}</strong> — {html.escape(d.get("why", ""))}'
+        + (" " + " ".join(f'<span class="tag">{html.escape(t)}</span>' for t in d.get("tickers") or []) if d.get("tickers") else "")
+        + "</li>"
+        for d in directives
+    )
+    journal_rows = "".join(
+        f'<tr><td><a href="{_journal_url(j)}">{j["date"]}</a></td><td>{html.escape(j["headline"])}</td></tr>'
+        for j in journal[:10]
+    )
+    eq_rows = "".join(
+        f'<tr><td>{e["date"]}</td><td>{_money(e["equity"])}</td><td>{_money(e["cash"])}</td>'
+        f'<td>{_pct_span((e["equity"] / first["equity"] - 1) * 100)}</td></tr>'
+        for e in reversed(equity)
+    )
+    ledger_rows = _ledger_rows(ledger)
+
+    body = f"""
+<div class="stats-bar">
+  <span class="stat">EQUITY: {_money(latest["equity"])}</span>
+  <span class="stat">SINCE {first["date"]}: {_pct_span(total_ret)}</span>
+  <span class="stat">LAST SESSION: {_pct_span(day_ret)}</span>
+  <span class="stat">CASH: {_money(latest["cash"])}</span>
+  <span class="stat">{len(positions)} POSITION{"" if len(positions) == 1 else "S"} · {sum(1 for t in ledger if not t.get("error"))} TRADES</span>
+</div>
+
+<section>
+  <h2>&#9671; Account Equity</h2>
+  {_equity_chart(equity)}
+  <details class="eq-table"><summary>Show as table</summary>
+    <table class="thesis-table"><thead><tr><th>Date</th><th>Equity</th><th>Cash</th><th>Return</th></tr></thead>
+    <tbody>{eq_rows}</tbody></table>
+  </details>
+</section>
+
+<section>
+  <h2>&#9671; Positions <small class="meta-date">as of {latest["date"]}</small></h2>
+  <table class="thesis-table">
+    <thead><tr><th>Symbol</th><th>Side</th><th>Qty</th><th>Avg Entry</th><th>Price</th><th>Value</th><th>Weight</th><th>Unrealized P&amp;L</th></tr></thead>
+    <tbody>{pos_rows or '<tr><td colspan="8">All cash</td></tr>'}</tbody>
+  </table>
+</section>
+
+<section>
+  <h2>&#9671; Recent Sessions <a href="{_url("/journal/index.html")}" style="font-size:11px;color:var(--link);">→ full journal</a></h2>
+  <table class="thesis-table"><thead><tr><th>Date</th><th>Headline</th></tr></thead><tbody>{journal_rows}</tbody></table>
+</section>
+
+<section>
+  <h2>&#9671; Current Strategy</h2>
+  <div class="thesis-body">{_safe_md(data["strategy"]) if data["strategy"] else "<p>No strategy written yet.</p>"}</div>
+  {f'<details class="eq-table"><summary>Strategy change history</summary><div class="thesis-body">{_safe_md(data["strategy_history"])}</div></details>' if data["strategy_history"] else ""}
+</section>
+
+<section>
+  <h2>&#9671; Research Directives <small class="meta-date">sent to the next scan</small></h2>
+  {f'<ul class="directive-list">{dir_html}</ul>' if dir_html else "<p>None.</p>"}
+</section>
+
+<section>
+  <h2>&#9671; Trade Log</h2>
+  <table class="thesis-table">
+    <thead><tr><th>Date</th><th>Side</th><th>Symbol</th><th>Size</th><th>Status</th><th>Rationale</th></tr></thead>
+    <tbody>{ledger_rows or '<tr><td colspan="6">No trades yet.</td></tr>'}</tbody>
+  </table>
+  <p class="disclaimer">&#9888; Paper trading account only. Not real money. Not financial advice.</p>
+</section>"""
+    with open(os.path.join(DOCS_DIR, "portfolio.html"), "w") as f:
         f.write(_page("Portfolio", body, active_nav="portfolio"))
+
+
+def build_journal_pages(journal: list[dict]):
+    crumb = f'<a href="{_url("/portfolio.html")}">Portfolio</a> &rsaquo; <a href="{_url("/journal/index.html")}">Journal</a>'
+    for j in journal:
+        main_part, _, reasoning = j["raw"].partition("## Full reasoning")
+        body = f'<div class="thesis-body">{_safe_md(main_part)}</div>'
+        if reasoning.strip():
+            body += (f'<details class="eq-table"><summary>Full session reasoning</summary>'
+                     f'<div class="thesis-body">{_safe_md(reasoning)}</div></details>')
+        with open(os.path.join(DOCS_DIR, "journal", f'{j["date"]}.html'), "w") as f:
+            f.write(_page(f'Session {j["date"]}', body, breadcrumb=crumb, active_nav="portfolio"))
+    rows = "".join(
+        f'<tr><td><a href="{_journal_url(j)}">{j["date"]}</a></td><td>{html.escape(j["headline"])}</td></tr>'
+        for j in journal
+    )
+    body = (f'<table class="thesis-table"><thead><tr><th>Date</th><th>Headline</th></tr></thead>'
+            f'<tbody>{rows or "<tr><td colspan=2>No sessions yet.</td></tr>"}</tbody></table>')
+    with open(os.path.join(DOCS_DIR, "journal", "index.html"), "w") as f:
+        f.write(_page("Trading Journal", body, breadcrumb=f'<a href="{_url("/portfolio.html")}">Portfolio</a>', active_nav="portfolio"))
 
 
 def build_css():
@@ -853,6 +1095,26 @@ footer small { color: #223355; }
 
 .scan-preview { color: #556688; font-size: 12px; }
 
+/* TRADER */
+.eq-chart { position: relative; background: var(--bg3); border: 1px solid var(--border); padding: 8px; }
+.eq-chart svg { width: 100%; height: auto; display: block; }
+.eq-grid { stroke: #0a1a44; stroke-width: 1; }
+.eq-axis { fill: #6677aa; font-family: var(--font-mono); font-size: 11px; }
+.eq-base { stroke: #556688; stroke-width: 1; stroke-dasharray: 4 4; }
+.eq-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+.eq-dot, .eq-hover { fill: var(--accent); stroke: var(--bg3); stroke-width: 2; }
+.eq-cross { stroke: var(--border2); stroke-width: 1; }
+.eq-tip {
+  position: absolute; pointer-events: none; background: var(--bg2); border: 1px solid var(--border2);
+  padding: 6px 10px; font-family: var(--font-mono); font-size: 11px; color: var(--text); line-height: 1.5;
+}
+.eq-tip b { color: var(--text-bright); }
+.eq-table { margin-top: 8px; font-size: 12px; }
+.eq-table summary { cursor: pointer; color: var(--link); font-family: var(--font-mono); font-size: 11px; margin-bottom: 6px; }
+.trade-why { font-size: 12px; color: var(--text); max-width: 420px; }
+.directive-list { padding-left: 18px; }
+.directive-list li { margin: 6px 0; }
+
 .scan-field { margin-bottom: 10px; }
 .scan-field ul, .scan-lead-body ul ul, .scan-headline-context ul { margin: 4px 0 0 0; padding-left: 18px; }
 .scan-field li { margin: 2px 0; }
@@ -916,5 +1178,7 @@ def build():
     build_theses_index(theses)
     build_connections_index()
     build_validations_index()
-    build_portfolio_page()
-    build_index(theses)
+    trader_data = _trader_data()
+    build_portfolio_page(trader_data)
+    build_journal_pages(trader_data["journal"])
+    build_index(theses, trader_data)

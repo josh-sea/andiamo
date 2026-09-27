@@ -1,0 +1,53 @@
+name: Daily Trading Session
+
+on:
+  schedule:
+    - cron: "0 15 * * 1-5"   # 11am EDT / 10am EST, after the open and after the 9am scan
+  workflow_dispatch:
+
+concurrency:
+  group: andiamo-bot
+  cancel-in-progress: false
+
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run trading session
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_BASE_URL: "https://paper-api.alpaca.markets"
+        run: python -m bot.main trade
+
+      - name: Commit journal + site updates
+        run: |
+          git config user.name "andiamo-bot"
+          git config user.email "andiamo-bot@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git add brain/ docs/
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "trader: session [$(date -u +%Y-%m-%d)]"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
