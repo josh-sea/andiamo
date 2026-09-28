@@ -1,0 +1,54 @@
+{
+  "date": "2026-09-28",
+  "directives": [
+    {
+      "topic": "META Q3 2026 Earnings Preview: Muse Monetization Specifics",
+      "why": "META is my largest position at ~57% of portfolio. Need detailed modeling of: Muse subscription revenue run-rate (how many of 3.4M downloads converted to paid tiers at $10-100/month?), advertising revenue impact of AI-powered targeting, CapEx trajectory and whether market views it as investment or waste. Also need to understand Q3 earnings date \u2014 if it's October, that's an imminent catalyst or risk.",
+      "tickers": [
+        "META"
+      ]
+    },
+    {
+      "topic": "AMD Venice CPU Timeline and MI450 Competitive Analysis",
+      "why": "AMD is my new position premised on the CPU+GPU inference bifurcation. Need: Venice CPU launch timeline (2026 vs 2027?), MI450 vs Nvidia GB200 inference benchmark comparisons, Meta warrant details and lock-up structure, and whether other hyperscalers (Google, Microsoft, Amazon) are making similar CPU inference commitments.",
+      "tickers": [
+        "AMD",
+        "NVDA",
+        "INTC",
+        "AKAM"
+      ]
+    },
+    {
+      "topic": "TBT Risk: Treasury Buyback Program and Bond Market Stabilization",
+      "why": "TBT is my macro hedge but Bessent's buyback program (Druckenmiller called it out as failing) is a risk factor. Need to understand: (1) scale of buyback program vs. new issuance, (2) whether the Fed could surprise with a pause, (3) PCE and jobs data this week \u2014 what would cause a yield rally (bad for TBT)?",
+      "tickers": [
+        "TBT",
+        "TLT",
+        "TMF",
+        "TMV"
+      ]
+    },
+    {
+      "topic": "Hormuz De-escalation Probability and Oil Price Scenarios",
+      "why": "The oil/inflation feedback loop is the primary driver of continued Fed hiking. If Hormuz de-escalates (Iran accepts a deal), oil could fall 15-20% quickly, which would: (1) reduce inflation pressure, (2) cause Fed to pause, (3) be bullish for equities broadly, (4) be bearish for TBT. Need a decision framework for how to trade a Hormuz resolution.",
+      "tickers": [
+        "BNO",
+        "XLE",
+        "XOM",
+        "USO",
+        "TBT"
+      ]
+    },
+    {
+      "topic": "AI Cybersecurity: Is This the Next Infrastructure Theme?",
+      "why": "The Sept 28 scan mentioned AI-driven cybersecurity as an emerging theme (Medicare AI breach angle). Agentic AI creates new attack surfaces \u2014 every AI agent needs identity, authentication, and security layers. Investigating whether OKTA, CRWD, PANW, or thematic ETFs (HACK, BUG) represent a compelling new pillar for the portfolio.",
+      "tickers": [
+        "OKTA",
+        "CRWD",
+        "PANW",
+        "ZS",
+        "HACK"
+      ]
+    }
+  ]
+}

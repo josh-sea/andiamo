@@ -1,0 +1,29 @@
+[
+  {
+    "date": "2026-09-28",
+    "equity": 463819.38,
+    "cash": 18677.97,
+    "positions": [
+      {
+        "symbol": "AAPL",
+        "side": "long",
+        "qty": 2.0,
+        "avg_entry_price": 158.82,
+        "current_price": 338.3398,
+        "market_value": 676.6796,
+        "unrealized_pl": 359.0396,
+        "unrealized_plpc": 1.13033
+      },
+      {
+        "symbol": "META",
+        "side": "long",
+        "qty": 620.0,
+        "avg_entry_price": 198.533839,
+        "current_price": 716.8786,
+        "market_value": 444464.732,
+        "unrealized_pl": 321373.75182,
+        "unrealized_plpc": 2.61086
+      }
+    ]
+  }
+]
