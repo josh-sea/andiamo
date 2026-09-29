@@ -226,6 +226,29 @@ class TradingSession:
                     pass
 
 
+_FINAL_ORDER_STATES = {"filled", "canceled", "expired", "rejected", "done_for_day", "replaced"}
+
+
+def refresh_ledger():
+    """Orders placed outside market hours fill later; update their logged status."""
+    if not os.path.exists(LEDGER_PATH):
+        return
+    with open(LEDGER_PATH) as f:
+        entries = [json.loads(line) for line in f if line.strip()]
+    changed = False
+    for e in entries:
+        o = e.get("order") or {}
+        if o.get("id") and o.get("status") not in _FINAL_ORDER_STATES:
+            try:
+                e["order"] = alpaca.get_order(o["id"])
+                changed = True
+            except Exception:
+                pass
+    if changed:
+        with open(LEDGER_PATH, "w") as f:
+            f.writelines(json.dumps(e) + "\n" for e in entries)
+
+
 def _build_briefing(snapshot: dict) -> str:
     today = _today()
     strategy = _read(STRATEGY_PATH, "(No strategy yet — this is your first session. Define one.)")
@@ -376,6 +399,7 @@ def _save(session: TradingSession, result: dict, full_text: str, snapshot_after:
 def run_session(max_turns: int = 60, verbose: bool = True) -> dict:
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
     session = TradingSession(verbose=verbose)
+    refresh_ledger()
     snapshot = _portfolio_snapshot()
     messages = [{"role": "user", "content": _build_briefing(snapshot)}]
     full_text = run_agent_loop(
