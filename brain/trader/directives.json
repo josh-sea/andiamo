@@ -1,53 +1,52 @@
 {
-  "date": "2026-09-28",
+  "date": "2026-09-29",
   "directives": [
     {
-      "topic": "META Q3 2026 Earnings Preview: Muse Monetization Specifics",
-      "why": "META is my largest position at ~57% of portfolio. Need detailed modeling of: Muse subscription revenue run-rate (how many of 3.4M downloads converted to paid tiers at $10-100/month?), advertising revenue impact of AI-powered targeting, CapEx trajectory and whether market views it as investment or waste. Also need to understand Q3 earnings date \u2014 if it's October, that's an imminent catalyst or risk.",
+      "topic": "META Q3 Earnings Scenario Matrix: October 28 Binary Event Modeling",
+      "why": "October 28 is the single most important event for the portfolio. With 54% concentration, need a detailed bear/base/bull scenario map: (1) What does a 'beat + strong Muse conversion data' print do to the stock \u2014 can it push toward $860 Cantor target? (2) What does a 'miss + CapEx hike' print do \u2014 realistic downside from $737? (3) What is the paid conversion rate the market needs to see from Muse (minimum threshold)? (4) What CapEx guidance number would be received as 'too high' vs. 'appropriate investment'? Model the after-hours move distribution based on comparable earnings events.",
       "tickers": [
         "META"
       ]
     },
     {
-      "topic": "AMD Venice CPU Timeline and MI450 Competitive Analysis",
-      "why": "AMD is my new position premised on the CPU+GPU inference bifurcation. Need: Venice CPU launch timeline (2026 vs 2027?), MI450 vs Nvidia GB200 inference benchmark comparisons, Meta warrant details and lock-up structure, and whether other hyperscalers (Google, Microsoft, Amazon) are making similar CPU inference commitments.",
+      "topic": "PCE Wednesday + Jobs Friday: TBT/Bond Market Impact Assessment",
+      "why": "PCE (Wednesday Sept 30) and September jobs (Friday Oct 2) are the binary macro events that will cement or undermine October rate hike odds. Core PCE expected +0.3% MoM, 3.3% annualized. Jobs expected +90-100K. If both print hot, October hike is certain and TBT should rally. If jobs disappoint (<50K), the Fed may pause and TBT faces headwinds. Need a real-time read on these prints as soon as they release.",
+      "tickers": [
+        "TBT",
+        "TMV",
+        "TLT",
+        "IEF"
+      ]
+    },
+    {
+      "topic": "CrowdStrike / AI Cybersecurity Deep Dive: Entry Timing and Valuation",
+      "why": "CRWD is a genuine structural growth story \u2014 26% revenue growth, $5.84B ARR, AI agent security as a new attack surface. But I need to know: (1) What is the valuation \u2014 forward P/S, EV/Revenue vs. peers? (2) When does CRWD report Q3 earnings \u2014 is there a near-term catalyst? (3) Is there a better entry point \u2014 where does CRWD tend to pull back to after runs? (4) How does PANW compare as an alternative or complement? This is a watch-list position I want to size properly when the entry is right.",
+      "tickers": [
+        "CRWD",
+        "PANW",
+        "ZS",
+        "HACK",
+        "BUG"
+      ]
+    },
+    {
+      "topic": "Hormuz Peace Process: Oil Shock Unwind Scenario and Portfolio Impact",
+      "why": "Qatar is still mediating as of September 29. A Hormuz deal \u2014 even a partial one \u2014 would be a multi-sigma oil price shock downward (Brent from $105 toward $80?). This would: (1) reduce inflation pressure \u2192 potentially reduce Fed hiking urgency \u2192 bearish for TBT (need to know how fast and how much), (2) relieve energy cost pressure on consumers \u2192 bullish for META advertising revenue, (3) potentially hurt energy-linked plays. Need a current status update on Qatar mediation, Iran's stated conditions, and the realistic probability of a deal in the next 30-60 days.",
+      "tickers": [
+        "TBT",
+        "BNO",
+        "USO",
+        "META"
+      ]
+    },
+    {
+      "topic": "AMD Venice CPU Commercial Traction: First Revenue Data and Competitive Threats",
+      "why": "Venice launched July 22-23 and should be generating first commercial revenue in Q3. AMD reports earnings in late October. Need to know: (1) What are analysts projecting for Venice CPU revenue contribution in Q3? (2) How is the Meta warrant structure structured \u2014 which milestone tranches have been hit, which remain? (3) Are other hyperscalers (Google, Microsoft) adopting Venice or staying with ARM/x86 alternatives? (4) What is Nvidia's response to the CPU inference thesis \u2014 are they building inference-optimized silicon that threatens AMD's positioning?",
       "tickers": [
         "AMD",
         "NVDA",
         "INTC",
         "AKAM"
-      ]
-    },
-    {
-      "topic": "TBT Risk: Treasury Buyback Program and Bond Market Stabilization",
-      "why": "TBT is my macro hedge but Bessent's buyback program (Druckenmiller called it out as failing) is a risk factor. Need to understand: (1) scale of buyback program vs. new issuance, (2) whether the Fed could surprise with a pause, (3) PCE and jobs data this week \u2014 what would cause a yield rally (bad for TBT)?",
-      "tickers": [
-        "TBT",
-        "TLT",
-        "TMF",
-        "TMV"
-      ]
-    },
-    {
-      "topic": "Hormuz De-escalation Probability and Oil Price Scenarios",
-      "why": "The oil/inflation feedback loop is the primary driver of continued Fed hiking. If Hormuz de-escalates (Iran accepts a deal), oil could fall 15-20% quickly, which would: (1) reduce inflation pressure, (2) cause Fed to pause, (3) be bullish for equities broadly, (4) be bearish for TBT. Need a decision framework for how to trade a Hormuz resolution.",
-      "tickers": [
-        "BNO",
-        "XLE",
-        "XOM",
-        "USO",
-        "TBT"
-      ]
-    },
-    {
-      "topic": "AI Cybersecurity: Is This the Next Infrastructure Theme?",
-      "why": "The Sept 28 scan mentioned AI-driven cybersecurity as an emerging theme (Medicare AI breach angle). Agentic AI creates new attack surfaces \u2014 every AI agent needs identity, authentication, and security layers. Investigating whether OKTA, CRWD, PANW, or thematic ETFs (HACK, BUG) represent a compelling new pillar for the portfolio.",
-      "tickers": [
-        "OKTA",
-        "CRWD",
-        "PANW",
-        "ZS",
-        "HACK"
       ]
     }
   ]

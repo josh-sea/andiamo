@@ -25,5 +25,62 @@
         "unrealized_plpc": 2.61086
       }
     ]
+  },
+  {
+    "date": "2026-09-29",
+    "equity": 473208.15,
+    "cash": 98234.62,
+    "positions": [
+      {
+        "symbol": "AAPL",
+        "side": "long",
+        "qty": 2.0,
+        "avg_entry_price": 158.82,
+        "current_price": 329.09,
+        "market_value": 658.18,
+        "unrealized_pl": 340.54,
+        "unrealized_plpc": 1.07209
+      },
+      {
+        "symbol": "AMD",
+        "side": "long",
+        "qty": 57.151519117,
+        "avg_entry_price": 612.406995,
+        "current_price": 606.98,
+        "market_value": 34689.829074,
+        "unrealized_pl": -310.161008,
+        "unrealized_plpc": -0.00886
+      },
+      {
+        "symbol": "ANET",
+        "side": "long",
+        "qty": 96.819431669,
+        "avg_entry_price": 206.57,
+        "current_price": 202.33,
+        "market_value": 19589.47561,
+        "unrealized_pl": -410.51439,
+        "unrealized_plpc": -0.02053
+      },
+      {
+        "symbol": "META",
+        "side": "long",
+        "qty": 345.0,
+        "avg_entry_price": 198.533839,
+        "current_price": 738.69,
+        "market_value": 254848.05,
+        "unrealized_pl": 186353.875545,
+        "unrealized_plpc": 2.72073
+      },
+      {
+        "symbol": "TBT",
+        "side": "long",
+        "qty": 1551.356318556,
+        "avg_entry_price": 41.89929,
+        "current_price": 42.02,
+        "market_value": 65187.992506,
+        "unrealized_pl": 187.264221,
+        "unrealized_plpc": 0.00288
+      }
+    ]
   }
 ]
