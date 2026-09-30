@@ -8,7 +8,7 @@ on:
   # Bot commits are pushed with GITHUB_TOKEN, which never triggers push events,
   # so deploy when a bot run finishes instead.
   workflow_run:
-    workflows: ["Daily Finance Scan", "Daily Trading Session"]
+    workflows: ["Daily Finance Scan", "Daily Trading Session", "Weekly Quant Lab"]
     types: [completed]
 
 permissions:

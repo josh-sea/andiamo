@@ -23,7 +23,8 @@ def _url(path: str) -> str:
 def _ensure_docs():
     for d in [DOCS_DIR, os.path.join(DOCS_DIR, "theses"), os.path.join(DOCS_DIR, "connections"),
               os.path.join(DOCS_DIR, "validations"), os.path.join(DOCS_DIR, "assets"),
-              os.path.join(DOCS_DIR, "scans"), os.path.join(DOCS_DIR, "journal")]:
+              os.path.join(DOCS_DIR, "scans"), os.path.join(DOCS_DIR, "journal"),
+              os.path.join(DOCS_DIR, "lab", "notebook"), os.path.join(DOCS_DIR, "lab", "figures")]:
         os.makedirs(d, exist_ok=True)
     # Prevent GitHub Pages from running Jekyll on our pre-built HTML
     nojekyll = os.path.join(DOCS_DIR, ".nojekyll")
@@ -46,7 +47,7 @@ def _md_to_html(text: str) -> str:
     paragraphs = []
     for block in re.split(r"\n{2,}", text):
         block = block.strip()
-        if block and not block.startswith("<"):
+        if block and not re.match(r"<(h[1-6]|li|hr|ul|ol|div|table|pre|details)\b", block):
             block = f"<p>{block}</p>"
         paragraphs.append(block)
     return "\n".join(paragraphs)
@@ -67,6 +68,7 @@ def _page(title: str, body: str, breadcrumb: str = "", active_nav: str = "") -> 
         ("Connections", _url("/connections/index.html"), "connections"),
         ("Validations", _url("/validations/index.html"), "validations"),
         ("Portfolio", _url("/portfolio.html"), "portfolio"),
+        ("Lab", _url("/lab/index.html"), "lab"),
     ]
     nav_html = ""
     for label, href, key in nav_items:
@@ -307,7 +309,25 @@ def _trader_summary(data: dict) -> str:
 </section>"""
 
 
-def build_index(theses: list[dict], trader_data: dict):
+def _lab_summary(data: dict) -> str:
+    if not data["notebooks"] and not data["registry"]:
+        return ""
+    promoted = sum(1 for e in data["registry"].values() if e.get("status") == "promoted")
+    latest = data["notebooks"][0] if data["notebooks"] else None
+    latest_html = (f'<p>Latest session: <a href="{_notebook_url(latest)}">{latest["date"]} — '
+                   f'{html.escape(latest["headline"])}</a></p>') if latest else ""
+    return f"""
+<section>
+  <h2>&#9671; Quant Lab</h2>
+  <div class="about-box">
+    <p>{promoted} promoted signal{"" if promoted == 1 else "s"} · {len(data["registry"])} proposed ·
+    {len(data["library"])} library modules · <a href="{_url("/lab/index.html")}">lab &amp; notebook →</a></p>
+    {latest_html}
+  </div>
+</section>"""
+
+
+def build_index(theses: list[dict], trader_data: dict, lab_data: dict):
     open_t = [t for t in theses if t["status"] == "open"]
     validated = [t for t in theses if t["status"] == "validated"]
     invalidated = [t for t in theses if t["status"] == "invalidated"]
@@ -364,6 +384,7 @@ def build_index(theses: list[dict], trader_data: dict):
 </div>
 
 {_trader_summary(trader_data)}
+{_lab_summary(lab_data)}
 {section("Active Investigations", open_t)}
 {section("Validated", validated)}
 {section("Invalidated", invalidated)}
@@ -707,6 +728,154 @@ def build_journal_pages(journal: list[dict]):
             f'<tbody>{rows or "<tr><td colspan=2>No sessions yet.</td></tr>"}</tbody></table>')
     with open(os.path.join(DOCS_DIR, "journal", "index.html"), "w") as f:
         f.write(_page("Trading Journal", body, breadcrumb=f'<a href="{_url("/portfolio.html")}">Portfolio</a>', active_nav="portfolio"))
+
+
+def _lab_data() -> dict:
+    from bot.lab.sandbox import load_library_index
+    from bot.lab.session import NOTEBOOK_DIR
+    from bot.lab.signals import load_registry
+    from bot.lab.data import META_PATH
+    notebooks = []
+    if os.path.exists(NOTEBOOK_DIR):
+        for fname in sorted(os.listdir(NOTEBOOK_DIR), reverse=True):
+            if fname.endswith(".md"):
+                with open(os.path.join(NOTEBOOK_DIR, fname)) as f:
+                    raw = f.read()
+                notebooks.append({"date": fname[:-3], "headline": raw.splitlines()[0].lstrip("# ").strip(), "raw": raw})
+    meta = {}
+    if os.path.exists(META_PATH):
+        with open(META_PATH) as f:
+            meta = json.load(f)
+    return {"registry": load_registry(), "notebooks": notebooks, "library": load_library_index(), "meta": meta}
+
+
+def _lab_md(text: str) -> str:
+    """Markdown with ![alt](figures/x.png) images, rendered safely."""
+    images = {}
+
+    def stash(m):
+        key = f"@@IMG{len(images)}@@"
+        images[key] = f'<img class="lab-fig" src="{_url("/lab/" + m.group(2))}" alt="{m.group(1)}">'
+        return key
+
+    escaped = html.escape(text, quote=False)
+    escaped = re.sub(r"!\[([^\]]*)\]\((figures/[\w.\-]+\.png)\)", stash, escaped)
+    out = _md_to_html(escaped)
+    for key, tag in images.items():
+        out = out.replace(key, tag)
+    return out
+
+
+def _sharpe(x) -> str:
+    if x is None:
+        return "—"
+    cls = "positive" if x >= 0.5 else ("negative" if x < 0 else "")
+    return f'<span class="{cls}">{x:.2f}</span>'
+
+
+def _notebook_url(entry: dict) -> str:
+    return _url(f"/lab/notebook/{entry['date']}.html")
+
+
+def build_lab_pages(data: dict):
+    reg, notebooks, library, meta = data["registry"], data["notebooks"], data["library"], data["meta"]
+    by_status = {}
+    for e in reg.values():
+        by_status.setdefault(e.get("status", "?"), []).append(e)
+
+    promoted_html = ""
+    for e in by_status.get("promoted", []):
+        ev = e["evaluation"]
+        curve = [{"date": d, "equity": v * 10000} for d, v in ev.get("equity_curve", [])]
+        weights = " ".join(f'<span class="tag">{html.escape(k)} {v:+.0%}</span>' for k, v in list(ev["current_weights"].items())[:12])
+        promoted_html += f"""
+<div class="scan-lead">
+  <div class="scan-lead-header">
+    <span class="scan-lead-title">{html.escape(e["name"])}</span>
+    <span class="badge badge-bull">PROMOTED {e["promoted"]}</span>
+  </div>
+  <div class="scan-lead-body">
+    <p>{html.escape(e.get("description", ""))}</p>
+    <p><strong>Why it should work:</strong> {html.escape(e.get("hypothesis", ""))}</p>
+    <p><strong>Sharpe</strong> in-sample {_sharpe(ev["insample"]["sharpe"])} · holdout {_sharpe(ev["holdout"]["sharpe"])} ·
+       live {_sharpe(ev["live"]["sharpe"]) if ev["live"]["days"] else "—"} ({ev["live"]["days"]} days) ·
+       holdout max drawdown {ev["holdout"]["max_drawdown"]:.1%}</p>
+    <p><strong>Current targets ({ev["as_of"]}):</strong> {weights or "flat"}</p>
+    <details class="eq-table"><summary>Backtest: growth of $10,000 (net of costs)</summary>{_equity_chart(curve)}</details>
+  </div>
+</div>"""
+
+    rows = ""
+    for e in sorted(reg.values(), key=lambda e: e.get("proposed", ""), reverse=True):
+        ev = e.get("evaluation") or {}
+        status = e.get("status", "?")
+        badge = {"promoted": "badge-bull", "rejected": "badge-bear", "retired": "badge-mixed"}.get(status, "badge-neutral")
+        reasons = "; ".join(e.get("reasons") or [])
+        rows += (f'<tr><td><strong>{html.escape(e["name"])}</strong><br><small>{html.escape(e.get("description", "")[:160])}</small></td>'
+                 f'<td><span class="badge {badge}">{status.upper()}</span></td><td>{e.get("proposed", "")}</td>'
+                 f'<td>{_sharpe(ev.get("insample", {}).get("sharpe"))}</td><td>{_sharpe(ev.get("holdout", {}).get("sharpe"))}</td>'
+                 f'<td class="trade-why">{html.escape(reasons)}</td></tr>')
+
+    nb_rows = "".join(
+        f'<tr><td><a href="{_notebook_url(n)}">{n["date"]}</a></td><td>{html.escape(n["headline"])}</td></tr>' for n in notebooks
+    )
+    lib_rows = "".join(
+        f'<tr><td><code>library.{html.escape(k)}</code></td><td>{html.escape(v["description"])}</td></tr>' for k, v in library.items()
+    )
+    coverage = (f'{meta.get("symbols", "?")} symbols · {meta.get("first_date", "?")} → {meta.get("last_date", "?")}'
+                if meta else "price store not built yet")
+
+    body = f"""
+<div class="stats-bar">
+  <span class="stat">&#9989; {len(by_status.get("promoted", []))} PROMOTED</span>
+  <span class="stat">&#10060; {len(by_status.get("rejected", []))} REJECTED</span>
+  <span class="stat">&#9851; {len(by_status.get("retired", []))} RETIRED</span>
+  <span class="stat">&#128218; {len(library)} LIBRARY MODULES</span>
+  <span class="stat">&#128190; {coverage}</span>
+</div>
+
+<div class="about-box">
+  <p>The lab writes and runs its own Python against daily price history to test market hypotheses. Trading signals it
+  proposes must pass a lookahead check and beat the gate on the most recent year of data, which its research never sees.
+  Promoted signals are handed to the portfolio manager daily and retired automatically if their live record decays.</p>
+</div>
+
+<section>
+  <h2>&#9671; Promoted Signals</h2>
+  {promoted_html or "<p>None yet. Most ideas fail out of sample — that is the gate working.</p>"}
+</section>
+
+<section>
+  <h2>&#9671; Lab Notebook</h2>
+  <table class="thesis-table"><thead><tr><th>Date</th><th>Session</th></tr></thead>
+  <tbody>{nb_rows or '<tr><td colspan="2">No sessions yet.</td></tr>'}</tbody></table>
+</section>
+
+<section>
+  <h2>&#9671; Every Signal Ever Proposed</h2>
+  <table class="thesis-table">
+    <thead><tr><th>Signal</th><th>Status</th><th>Proposed</th><th>In-sample Sharpe</th><th>Holdout Sharpe</th><th>Gate notes</th></tr></thead>
+    <tbody>{rows or '<tr><td colspan="6">Nothing proposed yet.</td></tr>'}</tbody>
+  </table>
+</section>
+
+<section>
+  <h2>&#9671; Library</h2>
+  <table class="thesis-table"><thead><tr><th>Module</th><th>What it does</th></tr></thead>
+  <tbody>{lib_rows or '<tr><td colspan="2">Empty.</td></tr>'}</tbody></table>
+</section>"""
+    with open(os.path.join(DOCS_DIR, "lab", "index.html"), "w") as f:
+        f.write(_page("Quant Lab", body, active_nav="lab"))
+
+    crumb = f'<a href="{_url("/lab/index.html")}">Lab</a>'
+    for n in notebooks:
+        main_part, _, log = n["raw"].partition("## Session log")
+        body = f'<div class="thesis-body">{_lab_md(main_part)}</div>'
+        if log.strip():
+            body += (f'<details class="eq-table"><summary>Full session log</summary>'
+                     f'<div class="thesis-body">{_safe_md(log)}</div></details>')
+        with open(os.path.join(DOCS_DIR, "lab", "notebook", f'{n["date"]}.html'), "w") as f:
+            f.write(_page(f'Lab {n["date"]}', body, breadcrumb=crumb, active_nav="lab"))
 
 
 def build_css():
@@ -1115,6 +1284,8 @@ footer small { color: #223355; }
 .directive-list { padding-left: 18px; }
 .directive-list li { margin: 6px 0; }
 
+.lab-fig { max-width: 100%; border: 1px solid var(--border); background: #fff; margin: 8px 0; display: block; }
+
 .scan-field { margin-bottom: 10px; }
 .scan-field ul, .scan-lead-body ul ul, .scan-headline-context ul { margin: 4px 0 0 0; padding-left: 18px; }
 .scan-field li { margin: 2px 0; }
@@ -1181,4 +1352,6 @@ def build():
     trader_data = _trader_data()
     build_portfolio_page(trader_data)
     build_journal_pages(trader_data["journal"])
-    build_index(theses, trader_data)
+    lab_data = _lab_data()
+    build_lab_pages(lab_data)
+    build_index(theses, trader_data, lab_data)

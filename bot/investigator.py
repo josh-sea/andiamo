@@ -261,6 +261,7 @@ At the end, output a JSON block wrapped in ```json ... ``` using exactly this sc
       "rank": 1,
       "title": "...",
       "signal_strength": 0-100,
+      "sentiment": -1.0 to 1.0 (bearish to bullish for the tickers listed),
       "category": "...",
       "what_is_happening": "...",
       "why_it_matters": "...",

@@ -403,6 +403,8 @@ footer small { color: #223355; }
 .directive-list { padding-left: 18px; }
 .directive-list li { margin: 6px 0; }
 
+.lab-fig { max-width: 100%; border: 1px solid var(--border); background: #fff; margin: 8px 0; display: block; }
+
 .scan-field { margin-bottom: 10px; }
 .scan-field ul, .scan-lead-body ul ul, .scan-headline-context ul { margin: 4px 0 0 0; padding-left: 18px; }
 .scan-field li { margin: 2px 0; }

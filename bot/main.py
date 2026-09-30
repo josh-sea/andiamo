@@ -10,6 +10,8 @@ Usage:
   python -m bot.main show-brain
   python -m bot.main daily-scan
   python -m bot.main trade
+  python -m bot.main lab-update
+  python -m bot.main lab
 """
 
 import sys
@@ -110,6 +112,25 @@ def cmd_trade(args):
     print("[andiamo] Site rebuilt.")
 
 
+def cmd_lab_update(args):
+    from bot.lab import data, signals
+    data.update_store(full=args.full)
+    signals.update_promoted()
+    print("[andiamo] Price store and promoted signals updated.")
+
+
+def cmd_lab(args):
+    from bot.lab import data, session
+    data.update_store()
+    print(f"\n[andiamo] Lab session — {datetime.utcnow().date()}\n")
+    out = session.run_session(verbose=True)
+    print("\n" + "=" * 60)
+    print(out["result"].get("headline", "(no headline)"))
+    print(f"{out['cells']} code cells; proposals: {[(p['name'], p['status']) for p in out['proposals']]}")
+    site_builder.build()
+    print("[andiamo] Site rebuilt.")
+
+
 def cmd_build_site(args):
     site_builder.build()
     print("[andiamo] Site built in docs/")
@@ -148,6 +169,9 @@ def main():
 
     sub.add_parser("daily-scan", help="Run the daily scan pipeline")
     sub.add_parser("trade", help="Run an autonomous paper-trading session")
+    p_lu = sub.add_parser("lab-update", help="Update the price store and re-evaluate promoted signals")
+    p_lu.add_argument("--full", action="store_true", help="Re-download full price history")
+    sub.add_parser("lab", help="Run a quant research lab session")
     sub.add_parser("build-site", help="Rebuild the GitHub Pages site")
     sub.add_parser("show-brain", help="Print the knowledge graph index")
 
@@ -160,6 +184,8 @@ def main():
         "scan": cmd_scan,
         "daily-scan": cmd_daily_scan,
         "trade": cmd_trade,
+        "lab-update": cmd_lab_update,
+        "lab": cmd_lab,
         "build-site": cmd_build_site,
         "show-brain": cmd_show_brain,
     }

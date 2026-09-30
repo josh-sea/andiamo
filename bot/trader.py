@@ -101,6 +101,19 @@ TRADING_TOOLS = [
         },
     },
     {
+        "name": "run_python",
+        "description": ("Run Python analytics against the local daily price store (S&P 500 + ETFs, adjusted). "
+                        "Each cell starts with `from andiamo_lab import *`: np, pd, plt, quant (bollinger, zscore, "
+                        "cointegration, lead_lag, factor_model, event_study, backtest, ...), load_prices(symbols), "
+                        "load_returns, universe(), sectors(), scans(); plus `from library import <module>` for the "
+                        "lab's saved tools. Print what you want to see."),
+        "input_schema": {
+            "type": "object",
+            "properties": {"code": {"type": "string"}},
+            "required": ["code"],
+        },
+    },
+    {
         "name": "read_scan",
         "description": "Read the full research scan for a date (YYYY-MM-DD)",
         "input_schema": {
@@ -164,6 +177,13 @@ class TradingSession:
     def __init__(self, verbose: bool = True):
         self.verbose = verbose
         self.actions: list[dict] = []
+        self._sandbox = None
+
+    def sandbox(self):
+        if self._sandbox is None:
+            from bot.lab.sandbox import Sandbox
+            self._sandbox = Sandbox(research=False)
+        return self._sandbox
 
     def _record(self, kind: str, inputs: dict, order: dict | None = None, error: str | None = None):
         self.actions.append({
@@ -206,6 +226,9 @@ class TradingSession:
             if name == "cancel_order":
                 alpaca.cancel_order(inputs["order_id"])
                 return "cancelled"
+            if name == "run_python":
+                rc, out = self.sandbox().run(inputs["code"])
+                return out if rc == 0 else f"[exit {rc}]\n{out}"
             if name == "read_scan":
                 text = _read(os.path.join(ASSETS_DIR, f"scan-{inputs['date']}.md"))
                 return text or f"No scan for {inputs['date']}"
@@ -249,6 +272,19 @@ def refresh_ledger():
             f.writelines(json.dumps(e) + "\n" for e in entries)
 
 
+def _lab_briefing() -> str:
+    from bot.lab.session import AGENDA_PATH
+    from bot.lab.signals import trader_briefing
+    try:
+        notes = _load_json(AGENDA_PATH, {}).get("notes_for_trader", [])
+        signals_text = trader_briefing()
+    except Exception as e:
+        return f"(lab unavailable: {e})"
+    notes_text = "\n".join(f"- {n}" for n in notes) or "(none yet)"
+    return (f"Promoted signals — passed out-of-sample testing; use, size or ignore at your discretion:\n{signals_text}\n\n"
+            f"Lab notes from its latest session:\n{notes_text}")
+
+
 def _build_briefing(snapshot: dict) -> str:
     today = _today()
     strategy = _read(STRATEGY_PATH, "(No strategy yet — this is your first session. Define one.)")
@@ -272,6 +308,8 @@ def _build_briefing(snapshot: dict) -> str:
         perf = (f"Inception {first['date']} at ${first['equity']:,.2f}. "
                 f"Recent closes: " + ", ".join(f"{e['date']} ${e['equity']:,.0f}" for e in equity[-10:]))
 
+    lab = _lab_briefing()
+
     return f"""TRADING SESSION — {today}
 
 ## Account right now
@@ -291,6 +329,9 @@ def _build_briefing(snapshot: dict) -> str:
 ## Latest research scans from your team (newest last)
 {chr(10).join(scan_bits) or "(none)"}
 
+## From your quant lab
+{lab}
+
 ---
 
 Run your session. Research whatever you need, then act: buy, sell, short, trim, add, or hold.
@@ -304,9 +345,11 @@ When done, output a final JSON block wrapped in ```json ... ``` with:
   "lessons": "what your past decisions taught you (or null)",
   "strategy": "your full strategy document in markdown if you are changing it, else null",
   "strategy_change_note": "why you changed it (or null)",
-  "research_directives": [{{"topic": "...", "why": "...", "tickers": ["..."]}}]
+  "research_directives": [{{"topic": "...", "why": "...", "tickers": ["..."]}}],
+  "lab_requests": ["quantitative questions for your lab's next weekly session"]
 }}
-research_directives are instructions to tomorrow's research scan: what you want investigated next."""
+research_directives are instructions to tomorrow's research scan: what you want investigated next.
+lab_requests go to the quant lab: statistical questions, relationships to test, signals you want built."""
 
 
 def _extract_json(text: str) -> dict:
@@ -358,7 +401,8 @@ def _save(session: TradingSession, result: dict, full_text: str, snapshot_after:
             f.write(f"\n## {today}\n{result.get('strategy_change_note') or 'Revised.'}\n")
 
     with open(DIRECTIVES_PATH, "w") as f:
-        json.dump({"date": today, "directives": result.get("research_directives") or []}, f, indent=2)
+        json.dump({"date": today, "directives": result.get("research_directives") or [],
+                   "lab_requests": result.get("lab_requests") or []}, f, indent=2)
 
     decisions = "\n".join(
         f"- **{d.get('action', '').upper()} {d.get('symbol', '')}** — {d.get('reasoning', '')}"
@@ -388,6 +432,9 @@ def _save(session: TradingSession, result: dict, full_text: str, snapshot_after:
 
 ## Research directives for tomorrow
 {directives or '—'}
+
+## Requests to the quant lab
+{chr(10).join(f"- {r}" for r in result.get("lab_requests") or []) or '—'}
 
 ## Full reasoning
 {full_text.strip()}
