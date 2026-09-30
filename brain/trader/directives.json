@@ -1,52 +1,48 @@
 {
-  "date": "2026-09-29",
+  "date": "2026-09-30",
   "directives": [
     {
-      "topic": "META Q3 Earnings Scenario Matrix: October 28 Binary Event Modeling",
-      "why": "October 28 is the single most important event for the portfolio. With 54% concentration, need a detailed bear/base/bull scenario map: (1) What does a 'beat + strong Muse conversion data' print do to the stock \u2014 can it push toward $860 Cantor target? (2) What does a 'miss + CapEx hike' print do \u2014 realistic downside from $737? (3) What is the paid conversion rate the market needs to see from Muse (minimum threshold)? (4) What CapEx guidance number would be received as 'too high' vs. 'appropriate investment'? Model the after-hours move distribution based on comparable earnings events.",
-      "tickers": [
-        "META"
-      ]
-    },
-    {
-      "topic": "PCE Wednesday + Jobs Friday: TBT/Bond Market Impact Assessment",
-      "why": "PCE (Wednesday Sept 30) and September jobs (Friday Oct 2) are the binary macro events that will cement or undermine October rate hike odds. Core PCE expected +0.3% MoM, 3.3% annualized. Jobs expected +90-100K. If both print hot, October hike is certain and TBT should rally. If jobs disappoint (<50K), the Fed may pause and TBT faces headwinds. Need a real-time read on these prints as soon as they release.",
+      "topic": "Friday September Jobs Report: Scenario Analysis and TBT/TMV Positioning",
+      "why": "The September jobs report (Friday October 2) is now the single most important near-term macro catalyst. Consensus is +90-100K but JOLTS and consumer confidence signal downside risk. Need a scenario matrix: (1) >140K \u2192 October hike back to 50%+, TBT/TMV positioning; (2) 90-120K \u2192 status quo, December lock; (3) <80K \u2192 October dead, what happens to bond yields and growth stocks? Also: does a weak jobs number actually help META/AMD via multiple expansion, or does it signal recession risk that hurts ad spending?",
       "tickers": [
         "TBT",
         "TMV",
         "TLT",
-        "IEF"
+        "META",
+        "AMD"
       ]
     },
     {
-      "topic": "CrowdStrike / AI Cybersecurity Deep Dive: Entry Timing and Valuation",
-      "why": "CRWD is a genuine structural growth story \u2014 26% revenue growth, $5.84B ARR, AI agent security as a new attack surface. But I need to know: (1) What is the valuation \u2014 forward P/S, EV/Revenue vs. peers? (2) When does CRWD report Q3 earnings \u2014 is there a near-term catalyst? (3) Is there a better entry point \u2014 where does CRWD tend to pull back to after runs? (4) How does PANW compare as an alternative or complement? This is a watch-list position I want to size properly when the entry is right.",
-      "tickers": [
-        "CRWD",
-        "PANW",
-        "ZS",
-        "HACK",
-        "BUG"
-      ]
-    },
-    {
-      "topic": "Hormuz Peace Process: Oil Shock Unwind Scenario and Portfolio Impact",
-      "why": "Qatar is still mediating as of September 29. A Hormuz deal \u2014 even a partial one \u2014 would be a multi-sigma oil price shock downward (Brent from $105 toward $80?). This would: (1) reduce inflation pressure \u2192 potentially reduce Fed hiking urgency \u2192 bearish for TBT (need to know how fast and how much), (2) relieve energy cost pressure on consumers \u2192 bullish for META advertising revenue, (3) potentially hurt energy-linked plays. Need a current status update on Qatar mediation, Iran's stated conditions, and the realistic probability of a deal in the next 30-60 days.",
-      "tickers": [
-        "TBT",
-        "BNO",
-        "USO",
-        "META"
-      ]
-    },
-    {
-      "topic": "AMD Venice CPU Commercial Traction: First Revenue Data and Competitive Threats",
-      "why": "Venice launched July 22-23 and should be generating first commercial revenue in Q3. AMD reports earnings in late October. Need to know: (1) What are analysts projecting for Venice CPU revenue contribution in Q3? (2) How is the Meta warrant structure structured \u2014 which milestone tranches have been hit, which remain? (3) Are other hyperscalers (Google, Microsoft) adopting Venice or staying with ARM/x86 alternatives? (4) What is Nvidia's response to the CPU inference thesis \u2014 are they building inference-optimized silicon that threatens AMD's positioning?",
+      "topic": "AMD Venice CPU: Deep Dive on 2027 Booking Status and Competitive Moat",
+      "why": "Research team flagged AMD Venice demand as 'off the charts' with 2027 fully booked and 2028 booking underway. This is potentially the most actionable near-term signal in the portfolio \u2014 AMD is currently only 7.4% of portfolio, below its deserved weight if this thesis is real. Need: (1) What customers are booking Venice? Is Meta the anchor or is there broad hyperscaler demand? (2) Venice competitive spec vs. Nvidia's inference-optimized chips (GB200 NVL72)? (3) AMD analyst estimates for CPU inference revenue contribution in 2027-2028 \u2014 has the street modeled this?",
       "tickers": [
         "AMD",
         "NVDA",
         "INTC",
         "AKAM"
+      ]
+    },
+    {
+      "topic": "META October 28 Earnings Preparation: Muse Conversion Model and CapEx Scenario Matrix",
+      "why": "October 28 is 28 days away and META is ~53% of the portfolio. Need a complete earnings scenario matrix: (1) Bull case: revenue $63-64B upper half of guide + Muse paid conversion >5% of 3.4M downloads disclosed + CapEx guidance maintained \u2192 stock to $810+; (2) Base case: revenue $62B midguide + Muse qualitative commentary + CapEx in range \u2192 stock $750-780; (3) Bear case: revenue $61B floor + Muse conversion not disclosed or disappointing + CapEx raised further \u2192 stock $680-720. Also: what are the specific Muse metrics to watch \u2014 is there any chance Meta pre-announces a subscription milestone before Oct 28?",
+      "tickers": [
+        "META"
+      ]
+    },
+    {
+      "topic": "OpenAI 'o' Agent DevDay: Real Threat to Muse or Noise?",
+      "why": "OpenAI's Monday DevDay reveal caused a 4.2% single-session selloff in META. Need a clear-eyed competitive analysis: (1) What exactly is the 'o' agent product \u2014 task automation, always-on, or different paradigm? (2) OpenAI's distribution (ChatGPT users) vs. META's distribution (3.4B users on WhatsApp/Instagram/Facebook) \u2014 how do they compare for agentic AI? (3) Has the market correctly repriced the competitive risk, or is the selloff an overreaction to a product that won't ship at scale for 12+ months? This directly informs whether to hold META into Oct 28 at current sizing.",
+      "tickers": [
+        "META"
+      ]
+    },
+    {
+      "topic": "TBT vs TMV: Sizing Upgrade Decision for December Hike Certainty",
+      "why": "December hike is now priced at 100% certainty. TBT (2x inverse 20+ Year Treasury) is the current position. TMV (3x inverse 20+ Year Treasury) offers more leverage but also more decay and volatility. With December at 100%, should I be in TMV for the final push? Key questions: (1) What is the expected TBT vs TMV performance if 10Y moves from 5.30% to 5.60% by December? (2) What is the daily decay differential between TBT and TMV on flat yield days? (3) Is 10 weeks until December 9 the right holding period for a leveraged inverse ETF, or does decay erode the thesis?",
+      "tickers": [
+        "TBT",
+        "TMV",
+        "TLT"
       ]
     }
   ]
