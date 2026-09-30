@@ -106,7 +106,8 @@ def scans() -> pd.DataFrame:
 
 def save_figure(name: str, fig=None) -> str:
     """Save the current (or given) matplotlib figure for the published lab notebook."""
-    name = re.sub(r"[^a-z0-9_-]+", "-", name.lower()).strip("-") or "figure"
+    name = re.sub(r"\.png$", "", name.lower().strip())
+    name = re.sub(r"[^a-z0-9_-]+", "-", name).strip("-") or "figure"
     os.makedirs(FIG_DIR, exist_ok=True)
     path = os.path.join(FIG_DIR, f"{name}.png")
     (fig or plt.gcf()).savefig(path, dpi=100, bbox_inches="tight")
