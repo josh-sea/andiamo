@@ -1,0 +1,6 @@
+{
+  "tbt_regime_analytics": {
+    "description": "TBT/TLT leveraged ETF analysis: decay measurement, regime detection, and scenario math for bond bear positioning. Also includes AMD/NVDA cointegration and meta pre-earnings event study utilities.",
+    "exports": "['bond_regime_score', 'measure_tbt_decay', 'np', 'pd', 'stats', 'tbt_scenario']"
+  }
+}

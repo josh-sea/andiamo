@@ -1,0 +1,19 @@
+{
+  "date": "2026-09-30",
+  "next_questions": [
+    "Rate-sensitive growth model: Can we build a META/AMD/NVDA weight signal that conditions on 10Y rate LEVEL rather than direction? Hypothesis: at 10Y >5%, tech multiple expansion requires earnings acceleration, not just low vol. Test earnings-surprise momentum for mega-cap tech.",
+    "Oil/inflation regime signal: With oil at $105 and Hormuz risk elevated, does XLE vs XLK rotation have a data-supported signal based on oil momentum (USO/XOP trend)? XLE vs XLK in high-oil environments should be testable with good IS data.",
+    "Fed hike terminal cycle signal: Historically, what happens to TLT/TBT in the 30/60/90 days AFTER the last hike of a cycle? If December is the last hike, the TBT thesis inverts to TLT. Build a 'last hike proximity' signal using fed funds futures proxy (IEF/SHY spread steepening reversal).",
+    "AMD earnings preview (Q3 report likely November): Do AMD earnings show systematic post-earnings drift that META does not? Test the same event study framework on AMD quarterly reports to see if 'beat and raise' patterns create a tradeable post-event window.",
+    "CrowdStrike Dec 1 setup: CRWD reports December 1. Test whether AI cybersecurity ETF names (CRWD, PANW, ZS) show pre-earnings momentum consistent with platform lock-in narratives. Given AI attack surface expansion theme, ask whether CRWD's Falcon Flex ARR beats create systematic drift."
+  ],
+  "notes_for_trader": [
+    "TBT/TMV: PCE miss today collapsed Oct hike odds from 65%\u219235%. Bond regime score = 1/5 (TLT 3M +2.7%, TBT 3M \u22123.4%). The momentum signal for TBT is OFF. If jobs Friday >140K: TBT ~+10.4% net, TMV ~+15.1% net (10-week hold). If <80K: TBT ~\u22128.4%, TMV ~\u221213.0%. The 3x leverage in TMV is NOT worth it at current uncertainty \u2014 stay TBT.",
+    "TBT decay is a myth in trending rate markets: TBT has OUTPERFORMED the theoretical 2x short TLT by +4.5%/yr on average (2016\u20132025), with the alpha reaching +12\u201313%/yr in 2023\u20132025 rate-rising periods. Fear of decay should not drive you to exit TBT prematurely in a trend.",
+    "AMD/NVDA ratio = 0.889 today vs 2-year average of 1.47. This is NOT mean-revertible \u2014 cointegration p=0.70. AMD at this ratio reflects structural AI GPU dominance by NVDA, not a temporary discount. Pair trade is not supported by data.",
+    "AMD: market-neutral 3M momentum = +1.51% (modest). Raw 3M momentum = +13.7% is almost entirely market beta (beta = 1.26 vs QQQ). There is no alpha in timing AMD \u2014 the Venice thesis must be held on fundamental conviction, not price signals.",
+    "META Oct 28: No pre-earnings drift alpha exists (p=0.663 across 38 quarters). The position at 53% of portfolio is a fundamental bet, not a momentum or drift trade. Earnings day idiosyncratic return is slightly negative on average (\u22120.55% mean) but noisy (p=0.14). The real variable is Muse conversion rate and CapEx guidance.",
+    "Low-vol growth signal (XLK vs defensives) is currently active (SPY vol z=\u22120.75) but was rejected in the holdout year \u2014 meaning XLK underperformed defensives even in calm markets over the past year. This is consistent with elevated 10Y yields (5.30%+) compressing growth multiples regardless of vol regime. Do not use low-vol as a simple tech timing signal in this rate environment.",
+    "Sector momentum (12-1 lookback, L3/S3) showed SR=0.51 overall but SR=\u22120.06 post-2022 \u2014 the factor is broken in the current macro regime. Do not run systematic sector momentum strategies."
+  ]
+}
