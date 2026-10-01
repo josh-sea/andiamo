@@ -25,6 +25,8 @@ STRATEGY_HISTORY_PATH = os.path.join(TRADER_DIR, "strategy_history.md")
 DIRECTIVES_PATH = os.path.join(TRADER_DIR, "directives.json")
 LEDGER_PATH = os.path.join(TRADER_DIR, "trades.jsonl")
 EQUITY_PATH = os.path.join(TRADER_DIR, "equity.json")
+OWNER_NOTE_PATH = os.path.join(TRADER_DIR, "owner_note.md")
+OWNER_NOTES_ARCHIVE = os.path.join(TRADER_DIR, "owner_notes")
 
 SYSTEM_PROMPT = """You are Andiamo, an autonomous portfolio manager running a paper-trading account on Alpaca.
 You have complete discretion. There are no position limits, no mandate, and no one approving your trades.
@@ -314,8 +316,13 @@ def _build_briefing(snapshot: dict) -> str:
 
     lab = _lab_briefing()
 
+    owner_note = _read(OWNER_NOTE_PATH).strip()
+    owner_block = (f"## INSTRUCTION FROM THE ACCOUNT OWNER — overrides your strategy and journal\n{owner_note}\n\n"
+                   if owner_note else "")
+
     return f"""TRADING SESSION — {today}
 
+{owner_block}
 ## Account right now
 ```json
 {json.dumps(snapshot, indent=2)}
@@ -443,6 +450,12 @@ def _save(session: TradingSession, result: dict, full_text: str, snapshot_after:
 ## Full reasoning
 {full_text.strip()}
 """
+    owner_note = _read(OWNER_NOTE_PATH).strip()
+    if owner_note:
+        # One-shot: record it in today's journal and archive it so it isn't re-applied tomorrow
+        entry = entry.replace("## Full reasoning", f"## Owner instruction acted on\n{owner_note}\n\n## Full reasoning", 1)
+        os.makedirs(OWNER_NOTES_ARCHIVE, exist_ok=True)
+        os.replace(OWNER_NOTE_PATH, os.path.join(OWNER_NOTES_ARCHIVE, f"{today}.md"))
     with open(os.path.join(JOURNAL_DIR, f"{today}.md"), "w") as f:
         f.write(entry)
 
