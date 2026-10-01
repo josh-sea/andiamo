@@ -1,50 +1,67 @@
-*Last revised: 2026-09-28*
+*Last revised: 2026-10-01*
 
-# Andiamo Portfolio Strategy — Initialized September 28, 2026
+# Andiamo Portfolio Strategy — Rebuilt October 1, 2026
 
 ## Philosophy
-Be bold when I have edge, patient when I don't. Size to conviction but never so concentrated that one bad call ends the game. Every position needs a thesis and a clear exit condition. Review positions at every session.
+Be bold when I have edge, patient when I don't. Every position must pass the clean-sheet test: *would I buy this today, at this size, if I started from cash?* If the answer is no — exit. Embedded gains are irrelevant in a paper account. Cost basis is not a reason to hold; thesis is.
 
-## Market Regime Assessment (September 2026)
-**Regime: AI Supercycle + Fed Tightening Collision**
-The dominant macro theme is a collision between genuine AI-driven earnings growth and a re-accelerating Fed tightening cycle (10Y at 5.22%, Fed funds at 4.0% with another hike priced at 65% odds). This creates a bifurcated market:
-- **Winners:** AI mega-caps (rate-insensitive earnings compounders), defense, energy (already priced)
-- **Losers:** Rate-sensitives (housing, banks, small caps, levered players), long-duration bonds
+## Market Regime: AI Supercycle + Structural Rate Stress (October 2026)
+
+**The dominant macro fact:** 10Y Treasury at 5.23%, the highest since 2002. The Fed has hiked into an oil shock (Brent ~$105), AI CapEx demand is structurally inflationary, and the fiscal deficit is a permanent source of bond supply that no election outcome resolves quickly. December hike is priced at 100% certainty; October hike collapsed to 38% after Goldman's forecast shift and PCE at 3.0%.
+
+**The dominant growth fact:** The AI infrastructure build-out is real and accelerating. AMD server CPU revenue +107% YoY. NVDA data center at $89B trailing twelve months. Muse at 5M downloads in <4 weeks. CRWD revenue +26%. ANET with $9.6B supply commitments. This is not a narrative — it's earnings.
+
+**The collision:** High-rate discount rates compress growth multiples, but AI earnings compounding is structural and faster than the rate headwind for the best-positioned companies. The right response is not to avoid AI — it's to own the AI names with the best risk-adjusted valuation.
 
 ## Strategic Pillars
 
-### 1. AI Infrastructure Core (60-65% of portfolio)
-META is the anchor — largest user platform in history now layering a genuine AI agent monetization engine (Muse). AMD and ANET provide diversification within AI infrastructure. Will add to this pillar when valuations are attractive or on pullbacks.
+### 1. AI Infrastructure Core (30% of portfolio)
+- **NVDA** (15%): Best-in-class AI GPU monopoly at 25x fwd P/E — structurally cheaper than AMD on better fundamentals
+- **ANET** (8%): AI networking pure-play, $9.6B supply commitments, EOS switching costs
+- **AMD** (7%): Venice CPU thesis intact, but sized below NVDA given 40x P/E premium and Arm headwind
 
-### 2. Macro Hedges (10-15% of portfolio)
-TBT (2x inverse long Treasury) as the primary hedge against the rate environment. Will consider adding TMV (3x inverse) if yields accelerate. Short positions in rate-sensitive sectors (housing ETFs, bank ETFs) are on watch list.
+### 2. AI Platform Monetization (20% of portfolio)
+- **META** (20%): Muse 5M downloads, dominant personal AI agent platform, Oct 28 binary earnings event. Position sized for the uncertainty, not the upside alone.
 
-### 3. Cash Buffer (15-20% of portfolio)
-Maintain meaningful cash to: (a) capitalize on dislocations, (b) avoid forced selling, (c) add to conviction ideas on pullbacks. Cash is NOT a failure — in a 5%+ yield environment, cash earns real returns.
+### 3. AI Security Cycle (8% of portfolio)
+- **CRWD** (8%): Agentic AI proliferation creates new attack surfaces; CRWD Falcon platform is the enterprise consolidation winner
 
-### 4. Opportunistic/Thematic Bets (5-10% of portfolio)
-Small, high-conviction plays on specific catalysts. Currently watching: AKAM (post-Anthropic deal — need to see execution before sizing up), energy shorts if Hormuz de-escalates, cybersecurity (AI-driven security spending).
+### 4. Macro Rate Hedge (10% of portfolio)
+- **TBT** (10%): 2x inverse 20Y+ Treasury. Structural thesis: fiscal deficit → permanent bond supply → sustained yield pressure. December hike at 100%. The near-term October catalyst is blunted but the directional call is correct.
+
+### 5. Defensive Ballast (8% of portfolio)
+- **XLV** (8%): Healthcare non-cyclical earnings, rate-resilient, provides asymmetric protection in a recession-fear scenario (weak NFP Friday)
+
+### 6. Strategic Cash Reserve (24% of portfolio)
+- Held intentionally for: (1) META add post-Oct 28 if Muse conversion beats; (2) NFP/macro dislocations; (3) Hormuz ceasefire energy trade; (4) October 14 CPI reaction.
+- Cash earns ~5% annualized — not dead money at current rates.
 
 ## Position Sizing Rules
-- **Core conviction:** 15-35% of portfolio per position
-- **High conviction:** 5-15% per position  
-- **Satellite/experimental:** 1-5% per position
-- **Maximum single name:** 60% (only META, given enormous embedded gain — will work down over time)
+- **Core conviction:** 15-20% per position (META, NVDA)
+- **High conviction:** 7-10% per position (ANET, AMD, TBT, CRWD, XLV)
+- **Maximum single name:** 25% (hard cap — no exceptions regardless of thesis strength)
 - **Minimum cash buffer:** 15%
 
-## Risk Management
-- No position more than 60% of portfolio (decreasing target for META)
-- Review each position thesis every session — cut if thesis breaks, not just price
-- Use stop-loss thinking, not hard stops — 'what would make me wrong?' over 'at what price do I sell?'
-- Macro hedges (TBT, inverse ETFs) as portfolio insurance, not speculation
+## The Clean-Sheet Test
+At the start of every session: *If I had cash equal to current equity, would I build this exact portfolio?* If any position fails — wrong size, no thesis, thesis broken — act immediately. This is not optional.
+
+## Key Catalyst Calendar
+- **Oct 2:** September NFP — binary for TBT direction and growth multiple (hot: October hike revives, TBT up; weak: October dead, TBT soft, XLV up)
+- **Oct 14:** CPI — last inflation print before Oct 28 FOMC. More important than NFP for hike timing.
+- **Oct 28:** META Q3 earnings + FOMC decision — dual binary. First hard Muse conversion data. Will size META back up on a strong print.
+- **Nov (ongoing):** AMD and ANET earnings — Venice hyperscaler instance wins or miss, ANET supply commitment conversion.
 
 ## Exit Framework
-For each position: define (1) what would make the thesis wrong, (2) what would make me add, (3) what would make me trim. Stick to this framework — don't marry positions.
+- **META:** Exit if Muse paid conversion <3% of downloads, or CapEx framed as cost vs. investment
+- **NVDA:** Exit if AMD closes AI GPU gap (>25% share) or hyperscaler CapEx cuts materially
+- **ANET:** Exit if revenue growth <25% or architecture shift away from Ethernet
+- **AMD:** Exit if Venice fails hyperscaler wins by Q1 2027 or server CPU growth decelerates
+- **CRWD:** Exit if revenue growth <15% or major breach
+- **TBT:** Exit if 10Y breaks below 4.50% (Fed pivot signal)
+- **XLV:** Exit if Fed pivots aggressively to cuts and risk-on crushes defensives
 
-## Tickers on Watch (not yet owned)
-- **AKAM:** CPU inference story real but execution risk high after 22% gap-up; wait for post-deal revenue data
-- **BNO:** Oil still at $105 but de-escalation risk is asymmetric; pass
-- **XOM/CVX:** Energy already priced in 40%+ YTD; pass
-- **TMV:** 3x inverse treasury — would add if TBT position gains conviction
-- **Cybersecurity ETF (HACK, BUG):** AI security spending cycle worth investigating
-- **Soybean futures/ETF:** Prior thesis exists in brain — warrants re-evaluation
+## What I Am Not Doing (and Why)
+- **No AAPL:** No AI differentiation thesis, consumer spending under pressure, no macro tailwind
+- **No energy longs:** Brent at $105 is already priced; Hormuz peace could snap 15-20% — wait for ceasefire trade with cash
+- **No TMV (3x inverse treasury):** Lab confirmed TMV decay risk not worth it at current October/December hike uncertainty
+- **No sector momentum strategies:** Factor broken post-2022 (SR = -0.06 in holdout period)
