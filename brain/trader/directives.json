@@ -1,62 +1,58 @@
 {
-  "date": "2026-10-01",
+  "date": "2026-10-02",
   "directives": [
     {
-      "topic": "September NFP report reaction \u2014 Oct 2 jobs data impact on Fed, rates, and AI equities",
-      "why": "NFP Friday is the immediate binary for TBT direction and growth equity multiples. Need same-day or next-morning read: payrolls number, unemployment rate, Fed hike probability shift, and 10Y yield reaction. Specifically: did we get >140K (October hike back to 50%), 90-120K (December confirmed), or <80K (recession fear)? Each scenario has different portfolio implications.",
+      "topic": "October 7 Fed Minutes: Tone of Hawks Before NFP Miss",
+      "why": "The September FOMC meeting minutes release on October 7. I need to know whether the hawk/dove balance shifted before the NFP print \u2014 any softening language would be a leading indicator that December hike language is already less certain than the 100% CME pricing suggests. This is the next information event before Oct 14 CPI.",
       "tickers": [
         "TBT",
         "TLT",
-        "META",
-        "NVDA",
-        "XLV"
+        "TMV"
       ]
     },
     {
-      "topic": "NVDA competitive position vs AMD in AI GPU market \u2014 market share, CapEx plans, Vera CPU progress",
-      "why": "Just initiated a 15% NVDA position on the thesis that NVDA is undervalued vs AMD on fwd P/E and structurally superior. Need validation: are hyperscalers committed to Blackwell/Vera roadmap? Is there any credible AMD GPU challenge to H100/H200/B100 in the 2026-2027 window? What is the actual CUDA moat measurement?",
+      "topic": "October 14 CPI: Energy Pass-Through from $102 Brent",
+      "why": "Brent at $102 with no Hormuz ceasefire in sight means September energy costs are elevated. The September CPI print (Oct 14) could see energy push headline CPI higher even as core stays controlled. This is the most important data point between now and Oct 28. A hot CPI could revive October hike odds from the dead and be a significant TBT catalyst.",
       "tickers": [
-        "NVDA",
-        "AMD",
-        "GOOGL",
-        "MSFT",
-        "AMZN"
+        "TBT",
+        "TLT",
+        "XLE",
+        "USO"
       ]
     },
     {
-      "topic": "CrowdStrike AI-driven security demand \u2014 agentic AI attack surface, revenue acceleration signals",
-      "why": "New CRWD position based on the thesis that agentic AI proliferation creates new security demand. Need to validate: what does CRWD's pipeline/booking data say about enterprise AI security spend? Are there any Q3 earnings preview signals? How is the Falcon platform positioned vs Palo Alto (PANW) and SentinelOne (S)?",
-      "tickers": [
-        "CRWD",
-        "PANW",
-        "S",
-        "ZS"
-      ]
-    },
-    {
-      "topic": "META Muse monetization deep dive \u2014 paid conversion rates, Q3 earnings setup",
-      "why": "Oct 28 is the most important single event in the portfolio. Need detailed modeling of: (1) what paid conversion rate from 5M downloads would validate vs disappoint consensus; (2) what CapEx guidance range triggers multiple compression vs expansion; (3) what is the bear case scenario on OpenAI Dots competition. The Oct 28 print will determine whether I add back to 30% or cut to 10%.",
+      "topic": "META Muse Paid Conversion Rate: Early Data and Comparable Apps",
+      "why": "Muse has 5M downloads with $20/$100 paid tiers now live. The Oct 28 earnings call will be the first hard conversion data. I need pre-call research: what conversion rates did comparable AI apps (ChatGPT, Grok, Claude) achieve at this stage? What does BNP's 'notoriously slow' monetization warning mean in quantitative terms? I need to calibrate my expectations before setting my add trigger.",
       "tickers": [
         "META"
       ]
     },
     {
-      "topic": "Hormuz ceasefire/de-escalation probability update \u2014 oil market and energy trade setup",
-      "why": "Qatar mediation ongoing. A ceasefire could snap oil 15-20% down and be a compelling short energy / long consumer play. Want to know: what is the current status of Qatar talks, what would a ceasefire term look like, and which instruments would best express a long-snap-back energy short? BNO short or XLE short worth sizing?",
+      "topic": "Hormuz Escalation Risk and Oil Price Ceiling",
+      "why": "Trump rejected Iran's peace proposal; 3rd carrier and 10K troops are deploying. The ceasefire trade I've been reserving cash for is not available. But I need to understand the escalation ceiling \u2014 at what point does direct US-Iran military engagement become priced in and what is Brent's upside scenario? Is there an energy ETF trade that captures Hormuz escalation upside without Brent mean-reversion risk?",
       "tickers": [
-        "BNO",
-        "XLE",
         "USO",
-        "XOM",
-        "CVX"
+        "XLE",
+        "OIH",
+        "BNO"
+      ]
+    },
+    {
+      "topic": "CRWD Q3 FY2027 Earnings Setup: $343-347M Net New ARR Forecast",
+      "why": "CRWD guided Q3 net new ARR at $343-347M (+29-31% YoY), decelerating from Q2's +51%. I need to understand: (1) when does CRWD report? (2) Is the deceleration from 51% to 29-31% already priced into the stock at 50.3x sales? (3) What is the consensus expectation and what would a beat vs. miss look like? This will determine whether CRWD is a hold-into-earnings or trim-before-earnings position.",
+      "tickers": [
+        "CRWD",
+        "PANW",
+        "ZS",
+        "OKTA"
       ]
     }
   ],
   "lab_requests": [
-    "NVDA vs AMD: build a relative value model comparing forward P/E, EV/EBITDA, and PEG ratio for NVDA vs AMD over the past 3 years. Where historically has the NVDA/AMD P/E ratio sat, and does the current 25x/40x spread represent mean reversion opportunity for NVDA or a structural discount?",
-    "TBT vs 10Y yield correlation: what is the rolling 30-day correlation between TBT daily returns and 10Y yield changes in 2024-2026? How did TBT behave in the 2-week windows around weak NFP prints (<80K) when the 10Y was above 4.5%?",
-    "CRWD revenue growth vs stock price lead/lag: does CRWD stock lead or lag revenue acceleration announcements? What is the typical price reaction in the 30 days before and after CRWD earnings beats?",
-    "Healthcare (XLV) vs S&P 500 in high-rate regimes: what was XLV's relative performance during periods when the 10Y was above 5% (2006-2007, 2023)? Does XLV outperform in weak-NFP scenarios specifically?",
-    "META pre-earnings positioning: construct a scenario payoff matrix for the Oct 28 print. Model 4 scenarios \u2014 (Strong beat + Muse conversion >5%, In-line, Miss + CapEx hike, Disaster) \u2014 with estimated stock move and portfolio P&L impact at the current 20% weight vs the prior 53% weight. Show what re-adding to 30% on a beat would do to portfolio returns."
+    "Build a yield-reversal signal: test historically whether TBT outperforms in the 10-day window AFTER a major bond rally (i.e., when TLT spikes >2% on macro surprise but then reverses within 2 days). Today's NFP response \u2014 initial TLT rally then yield reversal \u2014 is the exact pattern I need to understand statistically.",
+    "Model the relationship between 10Y yield levels (bins: 4.5-5.0%, 5.0-5.5%, 5.5%+) and TBT 30-day forward returns. At 5.34% today, what is the empirical distribution of TBT returns over the next 30 days? Does starting yield level predict TBT performance better than hike timing alone?",
+    "Run an event study on META around quarterly earnings from 2022-2025: what is the distribution of earnings-day returns when the stock has risen >15% in the 60 days prior to the print? META is up ~25% in September \u2014 how often does pre-earnings momentum predict a beat vs. a 'sell the news' reaction?",
+    "Test whether Brent crude at $100+ (Hormuz premium regime) historically predicts higher or lower 10Y Treasury yields over the subsequent 60 days. The mechanism: oil inflation \u2192 CPI upside \u2192 Fed hawkishness \u2192 higher yields. Quantify the effect size. This would validate or refute using energy as a TBT leading indicator.",
+    "Backtest XLV vs. SPY in the 30 days following NFP prints below 50K (labor shock scenarios). Does healthcare outperform in the month after a weak jobs report, or does the rate-relief rally in growth names overpower the defensive bid? This will help me decide whether to add to XLV after today's NFP miss."
   ]
 }

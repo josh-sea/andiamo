@@ -196,5 +196,82 @@
         "unrealized_plpc": 0.00694
       }
     ]
+  },
+  {
+    "date": "2026-10-02",
+    "equity": 474220.33,
+    "cash": 116700.21,
+    "positions": [
+      {
+        "symbol": "AMD",
+        "side": "long",
+        "qty": 53.151519117,
+        "avg_entry_price": 612.406994,
+        "current_price": 635.525,
+        "market_value": 33779.119187,
+        "unrealized_pl": 1228.757138,
+        "unrealized_plpc": 0.03775
+      },
+      {
+        "symbol": "ANET",
+        "side": "long",
+        "qty": 182.467209446,
+        "avg_entry_price": 207.006947,
+        "current_price": 207.23,
+        "market_value": 37812.679813,
+        "unrealized_pl": 40.699858,
+        "unrealized_plpc": 0.00108
+      },
+      {
+        "symbol": "CRWD",
+        "side": "long",
+        "qty": 138.775948197,
+        "avg_entry_price": 270.723269,
+        "current_price": 269.1182,
+        "market_value": 37347.133382,
+        "unrealized_pl": -222.744972,
+        "unrealized_plpc": -0.00593
+      },
+      {
+        "symbol": "META",
+        "side": "long",
+        "qty": 129.0,
+        "avg_entry_price": 194.951486,
+        "current_price": 727.53,
+        "market_value": 93851.37,
+        "unrealized_pl": 68702.628306,
+        "unrealized_plpc": 2.73185
+      },
+      {
+        "symbol": "NVDA",
+        "side": "long",
+        "qty": 299.635483049,
+        "avg_entry_price": 235.101267,
+        "current_price": 234.34,
+        "market_value": 70216.579098,
+        "unrealized_pl": -228.102605,
+        "unrealized_plpc": -0.00324
+      },
+      {
+        "symbol": "TBT",
+        "side": "long",
+        "qty": 1099.356318556,
+        "avg_entry_price": 41.899289,
+        "current_price": 42.68,
+        "market_value": 46920.527676,
+        "unrealized_pl": 858.279571,
+        "unrealized_plpc": 0.01863
+      },
+      {
+        "symbol": "XLV",
+        "side": "long",
+        "qty": 226.01858423,
+        "avg_entry_price": 166.225225,
+        "current_price": 166.36,
+        "market_value": 37600.451673,
+        "unrealized_pl": 30.461655,
+        "unrealized_plpc": 0.00081
+      }
+    ]
   }
 ]
